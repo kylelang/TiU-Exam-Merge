@@ -152,65 +152,75 @@ if(!check) {
 
 ### Create Output File ###
 
-## Divide the metadata boilerplate across a list of columns: 
-cols <- list(
-    c1 = c("Exam Name",
-           cExamName,
-           oExamName,
-           "",
-           "",
-           "Passed (%)",
-           "Average Grade",
-           "Average Score",
-           "Students (N)",
-           "",
-           "",
-           "Please note: Canvas cannot output special characters. Therefore, student names might be displayed improperly.",
-           "",
-           "",
-           "Surname"),
-    
-    c2 = c("Exam Date",
-           as.character(cExamDate),
-           as.character(oExamDate),
-           "",
-           "",
-           round(100 * mean(pooled$result > 5.5), 1),
-           round(mean(pooled$result), 1),
-           round(mean(pooled$score), 1),
-           nrow(pooled),
-           rep("", 5),
-           "Initials/First Name"),
-    
-    c3 = c("Batch ID", batchId, rep("", 12), "SNR"),
-    c4 = c("Course ID", courseCode, rep("", 12), "Grade"),
-    c5 = c(rep("", 14), "Score"),
-    c6 = c(rep("", 14), "Source"),
-    c7 = c(rep("", 14), "Version")
-)
-
+## Create an empty workbook and a new sheet therein:
 wb1 <- createWorkbook()
+s1  <- createSheet(wb = wb1, sheetName = "Results")
 
-?addDataFrame
+## Define a style to format headings in bold font:
+BoldStyle <- CellStyle(wb1) + Font(wb1, isBold = TRUE)
 
-HeadingStyle <- CellStyle(wb1) + Font(wb1, isBold = TRUE)
+## Populate column names for metadata block:
+blockData <- c("Exam Name", "Exam Date", "Batch ID", "Course ID")
+cb <- CellBlock(s1, 1, 1, 1, 4)
+CB.setRowData(cb, blockData, 1, rowStyle = BoldStyle)
 
-s1 <- createSheet(wb = wb1, sheetName = "Results")
+## Populate contents of metadata block:
+blockData <- matrix(c(cExamName, oExamName,
+                      as.character(cExamDate), as.character(oExamDate),
+                      batchId, "",
+                      courseCode, ""),
+                    nrow = 2)
+cb <- CellBlock(s1, 2, 1, 2, 4)
+CB.setMatrixData(cb, blockData, 1, 1)
 
-addDataFrame(pooled2, sheet = s1, row.names = FALSE, startRow = 15, colnamesStyle = HeadingStyle)
+## Populate row names for summary measures block:
+blockData <- c("Passed (%)", "Average Grade", "Average Score", "Students (N)")
+cb <- CellBlock(s1, 6, 1, 4, 1)
+CB.setColData(cb, blockData, 1, colStyle = BoldStyle)
 
-saveWorkbook(wb1, paste0(dataDir, "testOut2.xlsx"))
+## Populate contents of summary measures block:
+blockData <- matrix(
+    with(pooled,
+         c(round(100 * mean(result > 5.5), 1),
+           round(mean(result), 1),
+           round(mean(score), 1),
+           length(score)
+           )
+         )
+)
+cb <- CellBlock(s1, 6, 2, 4, 1)
+CB.setColData(cb, blockData, 1)
 
-    ## Merge boilerplate with results data:
-tmp <- do.call(cbind, cols)
+## Populate contents of warning message:
+blockData <- "Please note: Canvas cannot output special characters. Therefore, student names might be displayed improperly."
+cb <- CellBlock(s1, 12, 1, 1, 1)
+CB.setRowData(cb, blockData, 1)
 
-pooled2 <- pooled[c("surname", "firstName", "snr", "result", "score", "source", "version")]
-colnames(tmp) <- colnames(pooled2) <- 1 : ncol(tmp)
+## Populate column names for student results block:
+blockData <- c("Surname",
+               "Initials/First Name",
+               "SNR",
+               "Grade",
+               "Score",
+               "Source",
+               "Version")
+cb <- CellBlock(s1, 15, 1, 1, 7)
+CB.setRowData(cb, blockData, 1, rowStyle = BoldStyle)
 
-out <- rbind(tmp, pooled2)
+## Populate contents of student results block:
+addDataFrame(pooled[c("surname",
+                      "firstName",
+                      "snr",
+                      "result",
+                      "score",
+                      "source",
+                      "version")
+                    ],
+             sheet = s1,
+             col.names = FALSE,
+             row.names = FALSE,
+             startRow = 16,
+             startCol = 1)
 
-write.xlsx(out,
-           file      = paste0(dataDir, "testOut.xlsx"),
-           col.names = FALSE,
-           row.names = FALSE,
-           showNA    = FALSE)
+## Save the final workbook to disk:
+saveWorkbook(wb1, paste0(dataDir, "testOut4.xlsx"))
