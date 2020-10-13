@@ -1,29 +1,68 @@
 ### Title:    TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-13
+### Modified: 2020-10-14
 
 rm(list = ls(all = TRUE))
 
-nQuestions <-  40
-nOptions   <-  4
-passNorm   <-  0.55
-dataDir    <- "../../data/"
-onlineFile <- "2020-10-09T1915_Grades-35B101-B-6.csv"
-campusFile <- "6333 B_rep_cijferlijst.xlsx"
-outFile    <- "testOut6.xlsx"
+verbose <- TRUE
 
 source("subroutines.R")
 
 library(stringr)
 library(xlsx)
+library(svDialogs)
+
+
+###--Get Inputs from User----------------------------------------------------###
+
+if(verbose)
+    dlgMessage("First, I need to ask you for some input data. I'm hungry; please feed me!")
+
+## Define legal file types for online results file:
+oFilters <- matrix(c("Comma-Seperated Values", "*.csv;*.CSV"), 1, 2)
+
+## Prompt the user to select the file path to the CSV file containing the online
+## test results:
+onlineFile <- dlgOpen(title = "Please select the file that contains the online test results.",
+                      filters = oFilters)$res
+
+## Define legal file types for on-campus results file:
+cFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
+                     "Excel 2007 - 2019", "*.xlsx;*.XLSX"),
+                   2, 2, byrow = TRUE)
+
+## Prompt the user to select the file path to the XLSX file containing the
+## on-campus test results:
+campusFile <- dlgOpen(title = "Please select the file that contains the on-campus test results.",
+                      filters = cFilters)$res
+
+if(verbose)
+    dlgMessage("Now, I need to get some more information about this exam.")
+
+nQuestions <- as.numeric(
+    dlgInput("How many questions does this exam contain?")$res
+)
+nOptions   <- as.numeric(
+    dlgInput("How many response options are available for each question?")$res
+)
+passNorm   <- as.numeric(
+    dlgInput("What norm would you like to use to define a passing grade?",
+             default = 0.55)$res
+)
+
+if(verbose)
+    dlgMessage("Finally, I need you to tell me where you would like to save the results.")
+
+outFile <- dlgSave(title = "Where would you like to save the results?")$res
+
 
 ###--Process Online Gradebook Data-------------------------------------------###
 
 ## Read in Online gradebook and column names:
-onlineData  <- read.csv2(paste0(dataDir, onlineFile))
+onlineData  <- read.csv2(onlineFile)
 onlineNames <- as.character(
-    read.table(paste0(dataDir, onlineFile), nrows = 1, sep = ";")
+    read.table(paste0(onlineFile), nrows = 1, sep = ";")
 )
 
 ## Drop metadata rows:
@@ -67,7 +106,7 @@ online <- online[!is.na(online$snr), ]
 ###--Process On-Campus Grade Data--------------------------------------------###
 
 ## Read in on-campus grades:
-campusData <- read.xlsx(paste0(dataDir, campusFile), sheetIndex = 1)
+campusData <- read.xlsx(campusFile, sheetIndex = 1)
 
 ## Extract first and second columns:
 c1 <- campusData[[1]]
@@ -229,4 +268,4 @@ addDataFrame(pooled[c("surname",
              startCol = 1)
 
 ## Save the final workbook to disk:
-saveWorkbook(wb1, paste0(dataDir, outFile))
+saveWorkbook(wb1, outFile)
