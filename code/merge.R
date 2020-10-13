@@ -11,8 +11,6 @@ passNorm   = 0.55
 dataDir <- "../../data/"
 
 source("subroutines.R")
-library(readxl)
-library(dplyr)
 library(stringr)
 library(xlsx)
 
@@ -59,7 +57,7 @@ online <- data.frame(onlineData[ , c("SIS.User.ID",
                                 ],
                      surname   = name2,
                      firstName = name1,
-                     version   = "O",
+                     version   = "",
                      source    = "Online"
                      )
 colnames(online)[1 : 2] <- c("snr", "score")
@@ -70,11 +68,12 @@ online <- online[!is.na(online$snr), ]
 ### Process On-Campus Grade Data ###
 
 ## Read in on-campus grades:
-campusData <- read_excel(paste0(dataDir, "6332 A_rep_cijferlijst.xlsx"))
+campusData <- read.xlsx(paste0(dataDir, "6332 A_rep_cijferlijst.xlsx"),
+                        sheetIndex = 1)
 
 ## Extract first and second columns:
-c1 <- pull(campusData, 1)
-c2 <- pull(campusData, 2)
+c1 <- campusData[[1]]
+c2 <- campusData[[2]]
 
 ## Find the rows containing individual grades:
 gradeRows <- grep("\\d{6,7}", c1)
@@ -92,10 +91,11 @@ for(x in campusGrades$Naam) {
     name1 <- c(name1, substr(x, tmp[1] + 1, nchar(x)))
 }
 
-## Extract metadata from on-campus file:
+## Extract metadata from the on-campus file:
 cn        <- colnames(campusData)
+cn        <- gsub("^X", "", cn)
 faculty   <- tolower(cn[grep("Opleiding", cn) + 1])
-batchId   <- as.numeric(cn[grep("Batch ID", cn) + 1])
+batchId   <- as.numeric(cn[grep("Batch\\.ID", cn) + 1])
 cExamName <- c2[grep("Toetsnaam", c1)]
 cExamDate <- as.Date(as.numeric(cn[grep("Toetsdatum", cn) + 1]),
                      origin = "1899-12-30")
@@ -120,7 +120,7 @@ overlap <- intersect(campus$snr, online$snr)
 
 if(length(overlap) > 0) {
     
-### DO SOMETHING
+### DO SOMETHING ###############################################################
     
 }
 
@@ -145,7 +145,7 @@ check <- all(with(tmp, result - result0) == 0)
 
 if(!check) {
 
-### DO SOMETHING
+### DO SOMETHING ###############################################################
 
 }
 
@@ -223,4 +223,4 @@ addDataFrame(pooled[c("surname",
              startCol = 1)
 
 ## Save the final workbook to disk:
-saveWorkbook(wb1, paste0(dataDir, "testOut4.xlsx"))
+saveWorkbook(wb1, paste0(dataDir, "testOut5.xlsx"))
