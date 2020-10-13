@@ -37,3 +37,9 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# Emacs auto-save files
+*~
+
+# The project's sandbox directory
+.sandbox
