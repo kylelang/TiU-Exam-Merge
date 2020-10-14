@@ -31,12 +31,13 @@ scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
 prepScoringScheme <- function(file) {
     ## Read in the user-supplied lookup table:
     table <- autoReadCsv(file, header = FALSE)
-
+    colnames(table) <- c("Score", "Grade")
+    
     ## Convert the lookup table into a named vector:
     scheme        <- table[[2]]
     names(scheme) <- table[[1]]
     
-    scheme
+    list(scheme = scheme, table = table)
 }
 
 ###--------------------------------------------------------------------------###

@@ -61,8 +61,11 @@ if(customScheme == "Yes") {
     ## lookup table describing the custom scoring scheme:
     tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
                          filters = csvFilters)$res
-    scheme    <- prepScoringScheme(tableFile)
 
+    tmp        <- prepScoringScheme(tableFile)
+    scheme     <- tmp$scheme
+    scoreTable <- tmp$table
+    
     if(length(tableFile) == 0)
         wrappedError("I cannot proceed without a user-supplied scoring table.")
 } else {
@@ -222,6 +225,7 @@ campus0$result0 <- as.numeric(campus0$result0)
 
 ## Score the exams:
 if(customScheme == "Yes") {
+    ## Make sure all observed scores are represented in the lookup table:
     extra <- setdiff(sort(unique(pooled$score)), names(scheme))
     if(length(extra) > 0) {
         msg <- paste0("This set of observed scores: {",
@@ -229,16 +233,28 @@ if(customScheme == "Yes") {
                       "} is not represented in the supplied scoring table, so I cannot score this exam.")
         wrappedError(msg)
     }
-    
+
+    ## Score the exam:
     pooled$result <- sapply(pooled$score,
                             function(x, scheme) scheme[as.character(x)],
                             scheme = scheme)
 } else {
+    ## Score the exam:
     pooled$result <- scoreExam(score      = pooled$score,
                                nQuestions = nQuestions,
                                nOptions   = nOptions,
                                minGrade   = ifelse(faculty == "tisem", 0, 1),
                                pass       = passNorm)
+    
+    ## Generate a lookup table for the report:
+    tmp        <- 1 : nQuestions
+    scoreTable <- data.frame(Score = tmp,
+                             Grade = scoreExam(score      = tmp,
+                                               nQuestions = nQuestions,
+                                               nOptions   = nOptions,
+                                               minGrade   = ifelse(faculty == "tisem", 0, 1),
+                                               pass       = passNorm)
+                             )
 }
 
 ## Check the results:
@@ -321,5 +337,12 @@ addDataFrame(pooled[c("surname",
              startRow = 16,
              startCol = 1)
 
+## Add another sheet to hold the scoring table:
+s2 <- createSheet(wb = wb1, sheetName = "Scoring Table")
+addDataFrame(scoreTable,
+             sheet         = s2,
+             row.names     = FALSE,
+             colnamesStyle = BoldStyle)
+    
 ## Save the final workbook to disk:
 saveWorkbook(wb1, outFile)
