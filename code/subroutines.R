@@ -30,7 +30,7 @@ scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
 ## Prepare a scoring scheme based on a user-supplied lookup table:
 prepScoringScheme <- function(file) {
     ## Read in the user-supplied lookup table:
-    table <- autoReadCsv(file, header = FALSE)
+    table           <- autoReadCsv(file, header = FALSE)$data
     colnames(table) <- c("Score", "Grade")
     
     ## Convert the lookup table into a named vector:
@@ -110,9 +110,10 @@ findExam <- function(data,
         msg <- paste0("I think I've found your online exam results in this column:\n\n",
                       names[examCol],
                       "\n\nAm I correct?")
-        success <- dlgList(choices   = c("Yes", "No"),
-                           preselect = "Yes",
-                           title     = msg)$res
+                                        #success <- dlgList(choices   = c("Yes", "No"),
+                                        #                   preselect = "Yes",
+                                        #                   title     = msg)$res
+        success <- dlgMessage(message = msg, type = "yesno")$res
     }
     
     ## We found multiple candiate columns:
@@ -124,15 +125,15 @@ findExam <- function(data,
             dlgList(choices = c(names[examCol], opt0), title = msg)$res
         
         if(selection == opt0)
-            success <- "No"
+            success <- "no"
         else {
-            success <- "Yes"
+            success <- "yes"
             examCol <- which(names %in% selection)
         }
     }
     
     ## Ask the user to select the exam column, if we can't find it automatically:
-    if(length(examCol) == 0 || length(success) == 0 || success == "No") {
+    if(length(examCol) == 0 || length(success) == 0 || success == "no") {
         selection <- dlgList(choices = names,
                              title = "Please select the column that contains your online exam results.")$res
         
@@ -154,6 +155,9 @@ autoReadCsv <- function(file, ...) {
         length(scan(file, what = "character", sep = ";", quiet = TRUE))
     commaSize     <-
         length(scan(file, what = "character", sep = ",", quiet = TRUE))
-    
-    read.csv(file, sep = ifelse(semiColonSize > commaSize, ";", ","), ...)
+
+    sep <- ifelse(semiColonSize > commaSize, ";", ",")
+    out <- read.csv(file, sep = sep, ...)
+
+    list(data = out, sep = sep)
 }

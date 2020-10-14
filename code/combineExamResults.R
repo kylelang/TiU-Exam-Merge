@@ -46,17 +46,21 @@ campusFile <- dlgOpen(title = "Please select the file that contains the on-campu
 if(length(campusFile) == 0)
     wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 
+                                        #customScheme <-
+                                        #    dlgList(choices = c("Yes", "No"),
+                                        #            preselect = "No",
+                                        #            title = "Did the instructor request a custom scoring scheme?")$res
+
 customScheme <-
-    dlgList(choices = c("Yes", "No"),
-            preselect = "No",
-            title = "Did the instructor request a custom scoring scheme?")$res
+    dlgMessage(message = "Did the instructor request a custom scoring scheme?",
+               type    = "yesno")$res
 
-if(length(customScheme) == 0) {
-    wrappedWarning("You have not told me if the instructor wants to use their own scoring scheme, so I will apply the University's default scoring rule.")
-    customScheme <- "No"
-}
+                                        #if(length(customScheme) == 0) {
+                                        #    wrappedWarning("You have not told me if the instructor wants to use their own scoring scheme, so I will apply the University's default scoring rule.")
+                                        #    customScheme <- "No"
+                                        #}
 
-if(customScheme == "Yes") {
+if(customScheme == "yes") {
     ## Prompt the user to select the file path to the CSV file containing the
     ## lookup table describing the custom scoring scheme:
     tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
@@ -92,10 +96,11 @@ outFile <- dlgSave(title = "Where would you like to save the results?")$res
 ###--Process Online Gradebook Data-------------------------------------------###
 
 ## Read in Online gradebook and column names:
-onlineData <- autoReadCsv(onlineFile)
+tmp        <- autoReadCsv(onlineFile)
+onlineData <- tmp$data
 
 onlineNames <- as.character(
-    read.table(paste0(onlineFile), nrows = 1, sep = ";")
+    read.table(paste0(onlineFile), nrows = 1, sep = tmp$sep)
 )
 
 ## Drop metadata rows:
@@ -224,7 +229,7 @@ pooled$score    <- as.numeric(pooled$score)
 campus0$result0 <- as.numeric(campus0$result0)
 
 ## Score the exams:
-if(customScheme == "Yes") {
+if(customScheme == "yes") {
     ## Make sure all observed scores are represented in the lookup table:
     extra <- setdiff(sort(unique(pooled$score)), names(scheme))
     if(length(extra) > 0) {
