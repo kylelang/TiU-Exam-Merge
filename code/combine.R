@@ -1,24 +1,8 @@
-### Title:    TiU Exam Merging Utility
+### Title:    Script to Combine TiU Hybrid Exams
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
 ### Modified: 2020-10-14
 
-rm(list = ls(all = TRUE))
-
-source("subroutines.R")
-
-library(stringr)
-library(xlsx)
-library(svDialogs)
-
-if(FALSE) {
-onlineFile <- "../../data/2020-10-09T1915_Grades-35B101-B-6.csv"
-campusFile <- "../../data/6333 B_rep_cijferlijst.xlsx"
-lookupFile <- "../../data/lookup_table.csv"
-nQuestions <- 40
-nOptions   <- 4
-passNorm   <- 0.55
-}
 
 ###--Get Inputs from User----------------------------------------------------###
 
@@ -46,30 +30,20 @@ campusFile <- dlgOpen(title = "Please select the file that contains the on-campu
 if(length(campusFile) == 0)
     wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 
-                                        #customScheme <-
-                                        #    dlgList(choices = c("Yes", "No"),
-                                        #            preselect = "No",
-                                        #            title = "Did the instructor request a custom scoring scheme?")$res
-
 customScheme <-
     dlgMessage(message = "Did the instructor request a custom scoring scheme?",
                type    = "yesno")$res
-
-                                        #if(length(customScheme) == 0) {
-                                        #    wrappedWarning("You have not told me if the instructor wants to use their own scoring scheme, so I will apply the University's default scoring rule.")
-                                        #    customScheme <- "No"
-                                        #}
 
 if(customScheme == "yes") {
     ## Prompt the user to select the file path to the CSV file containing the
     ## lookup table describing the custom scoring scheme:
     tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
                          filters = csvFilters)$res
-
+    
     tmp        <- prepScoringScheme(tableFile)
     scheme     <- tmp$scheme
     scoreTable <- tmp$table
-    
+
     if(length(tableFile) == 0)
         wrappedError("I cannot proceed without a user-supplied scoring table.")
 } else {
@@ -85,7 +59,7 @@ if(customScheme == "yes") {
     )
     check <- length(nQuestions) == 0 | length(nOptions) == 0 | length(passNorm) == 0
     if(check)
-        wrappedError("I need to know how many questions this exam contains, the number of response options for each question, and the passing norm before I can proceed.") 
+        wrappedError("I need to know how many questions this exam contains, the number of response options for each question, and the passing norm before I can proceed.")
 }
 
 dlgMessage("Finally, I need you to tell me where you would like to save the results.")
@@ -96,11 +70,14 @@ outFile <- dlgSave(title = "Where would you like to save the results?")$res
 ###--Process Online Gradebook Data-------------------------------------------###
 
 ## Read in Online gradebook and column names:
-tmp        <- autoReadCsv(onlineFile)
+tmp        <- autoReadCsv(onlineFile, stringsAsFactors = FALSE)
 onlineData <- tmp$data
 
 onlineNames <- as.character(
-    read.table(paste0(onlineFile), nrows = 1, sep = tmp$sep)
+    read.table(file             = paste0(onlineFile),
+               nrows            = 1,
+               sep              = tmp$sep,
+               stringsAsFactors = FALSE)
 )
 
 ## Drop metadata rows:
@@ -146,7 +123,7 @@ online <- online[!is.na(online$snr), ]
 ###--Process On-Campus Grade Data--------------------------------------------###
 
 ## Read in on-campus grades:
-campusData <- read.xlsx(campusFile, sheetIndex = 1)
+campusData <- read.xlsx(campusFile, sheetIndex = 1, stringsAsFactors = FALSE)
 
 ## Extract first and second columns:
 c1 <- campusData[[1]]
@@ -168,7 +145,7 @@ if(any(snrFlag))
     for(i in which(snrFlag)) {
         x   <- extraCol[i]
         tmp <- unlist(str_locate_all(x, "\\d{6,7}\\s"))
-        
+
         campusGrades[i, "S Nummer"]  <- substr(x, tmp[1], tmp[2] - 1)
         campusGrades[i, "Naam"]      <- substr(x, tmp[2] + 1, nchar(x))
     }
@@ -211,12 +188,12 @@ if(length(overlap) > 0) {
 
     overlapFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
     write.table(tmp, file = overlapFile, sep = "\t", row.names = FALSE)
-    
+
     msg <- paste0("It looks like ",
                   length(overlap),
                   " students are represented in both input files. I have saved their information in the file: ",
                   overlapFile,
-                  ". Please correct this issue before trying to rerun this job.")    
+                  ". Please correct this issue before trying to rerun this job.")
     wrappedError(msg)
 }
 
@@ -250,7 +227,7 @@ if(customScheme == "yes") {
                                nOptions   = nOptions,
                                minGrade   = ifelse(faculty == "tisem", 0, 1),
                                pass       = passNorm)
-    
+
     ## Generate a lookup table for the report:
     tmp        <- 1 : nQuestions
     scoreTable <- data.frame(Score = tmp,
@@ -268,7 +245,7 @@ check <- all(with(tmp, result - result0) == 0)
 
 if(!check)
     wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.")
-    
+
 
 ###--Create XLSX Output File-------------------------------------------------###
 
@@ -348,6 +325,6 @@ addDataFrame(scoreTable,
              sheet         = s2,
              row.names     = FALSE,
              colnamesStyle = BoldStyle)
-    
+
 ## Save the final workbook to disk:
 saveWorkbook(wb1, outFile)
