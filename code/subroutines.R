@@ -1,8 +1,9 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-13
+### Modified: 2020-10-14
 
+## Apply the exam committee's scoring rule for exams:
 scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
     ## Compute score expected by guessing:
     guess <- nQuestions / nOptions
@@ -26,6 +27,21 @@ scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
 
 ###--------------------------------------------------------------------------###
 
+## Prepare a scoring scheme based on a user-supplied lookup table:
+prepScoringScheme <- function(file) {
+    ## Read in the user-supplied lookup table:
+    table <- autoReadCsv(file, header = FALSE)
+
+    ## Convert the lookup table into a named vector:
+    scheme        <- table[[2]]
+    names(scheme) <- table[[1]]
+    
+    scheme
+}
+
+###--------------------------------------------------------------------------###
+
+## Parse student names into surname and initials/first name:
 parseName <- function(x) {
     ## Case 1.1: Surname, First Name
     ## Case 1.2: Surname, Initials
@@ -66,3 +82,77 @@ parseName <- function(x) {
 }
 
 ###--------------------------------------------------------------------------###
+
+## Wrap error messages:
+wrappedError <- function(msg, width = 79)
+    stop(paste(strwrap(msg, width), collapse = "\n"), call. = FALSE)
+
+###--------------------------------------------------------------------------###
+
+## Wrap warning messages:
+wrappedWarning <- function(msg, width = 79)
+    warning(paste(strwrap(msg, width), collapse = "\n"), call. = FALSE)
+
+###--------------------------------------------------------------------------###
+
+## Find the index of the column containing the online exam results:
+findExam <- function(data,
+                     names,
+                     pattern = "\\d{4}\\.\\d{2}\\.\\d{2}.*Remotely\\.Proctored")
+{
+    ## Try to find the exam column in the Online gradebook:
+    examCol <- grep(pattern, colnames(data))
+    
+    ## We found one candidate column:
+    if(length(examCol) == 1) {
+        ## Confirm the exam column with the user:
+        msg <- paste0("I think I've found your online exam results in this column:\n\n",
+                      names[examCol],
+                      "\n\nAm I correct?")
+        success <- dlgList(choices   = c("Yes", "No"),
+                           preselect = "Yes",
+                           title     = msg)$res
+    }
+    
+    ## We found multiple candiate columns:
+    if(length(examCol) > 1) {
+        ## Confirm the exam column with the user:
+        msg       <- "I've found multiple columns that seem like they may contain your online exam results.\nPlease select the appropriate column."
+        opt0      <- "None of these columns contains my online exam results."
+        selection <-
+            dlgList(choices = c(names[examCol], opt0), title = msg)$res
+        
+        if(selection == opt0)
+            success <- "No"
+        else {
+            success <- "Yes"
+            examCol <- which(names %in% selection)
+        }
+    }
+    
+    ## Ask the user to select the exam column, if we can't find it automatically:
+    if(length(examCol) == 0 || length(success) == 0 || success == "No") {
+        selection <- dlgList(choices = names,
+                             title = "Please select the column that contains your online exam results.")$res
+        
+        if(length(selection) == 0)
+            wrappedError("I cannot proceed without knowing which column contains your online exam results.")
+        
+        examCol <- which(names %in% selection)
+    }
+    
+    ## Return the column index for the online exam results:
+    examCol
+}
+
+###--------------------------------------------------------------------------###
+
+## Automatically detect the field delimiter in a CSV file and read its contents.
+autoReadCsv <- function(file, ...) {
+    semiColonSize <-
+        length(scan(file, what = "character", sep = ";", quiet = TRUE))
+    commaSize     <-
+        length(scan(file, what = "character", sep = ",", quiet = TRUE))
+    
+    read.csv(file, sep = ifelse(semiColonSize > commaSize, ";", ","), ...)
+}

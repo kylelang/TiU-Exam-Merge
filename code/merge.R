@@ -5,54 +5,83 @@
 
 rm(list = ls(all = TRUE))
 
-verbose <- TRUE
-
 source("subroutines.R")
 
 library(stringr)
 library(xlsx)
 library(svDialogs)
 
+if(FALSE) {
+onlineFile <- "../../data/2020-10-09T1915_Grades-35B101-B-6.csv"
+campusFile <- "../../data/6333 B_rep_cijferlijst.xlsx"
+lookupFile <- "../../data/lookup_table.csv"
+nQuestions <- 40
+nOptions   <- 4
+passNorm   <- 0.55
+}
 
 ###--Get Inputs from User----------------------------------------------------###
 
-if(verbose)
-    dlgMessage("First, I need to ask you for some input data. I'm hungry; please feed me!")
-
 ## Define legal file types for online results file:
-oFilters <- matrix(c("Comma-Seperated Values", "*.csv;*.CSV"), 1, 2)
+csvFilters <- matrix(c("Comma-Seperated Values", "*.csv;*.CSV"), 1, 2)
 
 ## Prompt the user to select the file path to the CSV file containing the online
 ## test results:
 onlineFile <- dlgOpen(title = "Please select the file that contains the online test results.",
-                      filters = oFilters)$res
+                      filters = csvFilters)$res
+
+if(length(onlineFile) == 0)
+    wrappedError("I cannot proceed without knowing where to find your online test results.")
 
 ## Define legal file types for on-campus results file:
-cFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
+xlsxFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
                      "Excel 2007 - 2019", "*.xlsx;*.XLSX"),
                    2, 2, byrow = TRUE)
 
 ## Prompt the user to select the file path to the XLSX file containing the
 ## on-campus test results:
 campusFile <- dlgOpen(title = "Please select the file that contains the on-campus test results.",
-                      filters = cFilters)$res
+                      filters = xlsxFilters)$res
 
-if(verbose)
-    dlgMessage("Now, I need to get some more information about this exam.")
+if(length(campusFile) == 0)
+    wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 
-nQuestions <- as.numeric(
-    dlgInput("How many questions does this exam contain?")$res
-)
-nOptions   <- as.numeric(
-    dlgInput("How many response options are available for each question?")$res
-)
-passNorm   <- as.numeric(
-    dlgInput("What norm would you like to use to define a passing grade?",
-             default = 0.55)$res
-)
+customScheme <-
+    dlgList(choices = c("Yes", "No"),
+            preselect = "No",
+            title = "Did the instructor request a custom scoring scheme?")$res
 
-if(verbose)
-    dlgMessage("Finally, I need you to tell me where you would like to save the results.")
+if(length(customScheme) == 0) {
+    wrappedWarning("You have not told me if the instructor wants to use their own scoring scheme, so I will apply the University's default scoring rule.")
+    customScheme <- "No"
+}
+
+if(customScheme == "Yes") {
+    ## Prompt the user to select the file path to the CSV file containing the
+    ## lookup table describing the custom scoring scheme:
+    tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
+                         filters = csvFilters)$res
+    scheme    <- prepScoringScheme(tableFile)
+
+    if(length(tableFile) == 0)
+        wrappedError("I cannot proceed without a user-supplied scoring table.")
+} else {
+    nQuestions <- as.numeric(
+        dlgInput("How many questions does this exam contain?")$res
+    )
+    nOptions   <- as.numeric(
+        dlgInput("How many response options are available for each question?")$res
+    )
+    passNorm   <- as.numeric(
+        dlgInput("What norm would you like to use to define a passing grade?",
+                 default = 0.55)$res
+    )
+    check <- length(nQuestions) == 0 | length(nOptions) == 0 | length(passNorm) == 0
+    if(check)
+        wrappedError("I need to know how many questions this exam contains, the number of response options for each question, and the passing norm before I can proceed.") 
+}
+
+dlgMessage("Finally, I need you to tell me where you would like to save the results.")
 
 outFile <- dlgSave(title = "Where would you like to save the results?")$res
 
@@ -60,7 +89,8 @@ outFile <- dlgSave(title = "Where would you like to save the results?")$res
 ###--Process Online Gradebook Data-------------------------------------------###
 
 ## Read in Online gradebook and column names:
-onlineData  <- read.csv2(onlineFile)
+onlineData <- autoReadCsv(onlineFile)
+
 onlineNames <- as.character(
     read.table(paste0(onlineFile), nrows = 1, sep = ";")
 )
@@ -69,21 +99,23 @@ onlineNames <- as.character(
 onlineData <- onlineData[-c(1 : 2), ]
 
 ## Find the exam column in the Online gradebook:
-examCol <- grep("\\d{4}\\.\\d{2}\\.\\d{2}.*Remotely\\.Proctored",
-                colnames(onlineData)
-                )
+examCol <- findExam(data = onlineData, names = onlineNames)
 
 ## Extract metadata from online exam name:
 oExamName <- onlineNames[examCol]
+tmp       <- str_locate_all(oExamName, c("/", "\\("))
 
-tmp <- str_locate_all(oExamName, c("/", "\\("))
+oExamDate <- tryCatch(substr(oExamName, 1, tmp[[1]][1, 1] - 1),
+                      error = function(e) "Not Recovered")
 
-oExamDate  <- as.Date(substr(oExamName, 1, tmp[[1]][1, 1] - 1))
+courseCode <- tryCatch(substr(oExamName, tmp[[1]][1, 1] + 1, tmp[[1]][2, 2] - 1),
+                       error = function(e) "Not Recovered")
 
-courseCode <- substr(oExamName, tmp[[1]][1, 1] + 1, tmp[[1]][2, 2] - 1)
-
-oExamName <- substr(oExamName, tmp[[1]][2, 2] + 1, tmp[[2]][1, 1] - 1)
-oExamName <- str_trim(oExamName)
+tmp <- try(
+    substr(oExamName, tmp[[1]][2, 2] + 1, tmp[[2]][1, 1] - 1),
+    silent = TRUE
+)
+if(class(tmp) != "try-error") oExamName <- str_trim(tmp)
 
 ## Parse student names:
 oNames <- sapply(onlineData$Student, parseName, USE.NAMES = FALSE)
@@ -164,9 +196,20 @@ colnames(campus0) <- c("snr", "result0")
 overlap <- intersect(campus$snr, online$snr)
 
 if(length(overlap) > 0) {
+    tmp <- as.matrix(
+        online[online$snr %in% overlap, c("snr", "surname", "firstName")]
+    )
+    colnames(tmp) <- c("SNR", "Surname", "Initials/First Name")
+
+    overlapFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
+    write.table(tmp, file = overlapFile, sep = "\t", row.names = FALSE)
     
-### DO SOMETHING ###############################################################
-    
+    msg <- paste0("It looks like ",
+                  length(overlap),
+                  " students are represented in both input files. I have saved their information in the file: ",
+                  overlapFile,
+                  ". Please correct this issue before trying to rerun this job.")    
+    wrappedError(msg)
 }
 
 ## Stack the relevent columns from the online and on-campus files:
@@ -178,22 +221,33 @@ pooled$score    <- as.numeric(pooled$score)
 campus0$result0 <- as.numeric(campus0$result0)
 
 ## Score the exams:
-pooled$result <- scoreExam(score      = pooled$score,
-                           nQuestions = nQuestions,
-                           nOptions   = nOptions,
-                           minGrade   = ifelse(faculty == "tisem", 0, 1),
-                           pass       = passNorm)
+if(customScheme == "Yes") {
+    extra <- setdiff(sort(unique(pooled$score)), names(scheme))
+    if(length(extra) > 0) {
+        msg <- paste0("This set of observed scores: {",
+                      paste(extra, collapse = ", "),
+                      "} is not represented in the supplied scoring table, so I cannot score this exam.")
+        wrappedError(msg)
+    }
+    
+    pooled$result <- sapply(pooled$score,
+                            function(x, scheme) scheme[as.character(x)],
+                            scheme = scheme)
+} else {
+    pooled$result <- scoreExam(score      = pooled$score,
+                               nQuestions = nQuestions,
+                               nOptions   = nOptions,
+                               minGrade   = ifelse(faculty == "tisem", 0, 1),
+                               pass       = passNorm)
+}
 
 ## Check the results:
 tmp   <- merge(pooled, campus0, by = "snr")
 check <- all(with(tmp, result - result0) == 0)
 
-if(!check) {
-
-### DO SOMETHING ###############################################################
-
-}
-
+if(!check)
+    wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.")
+    
 
 ###--Create XLSX Output File-------------------------------------------------###
 
