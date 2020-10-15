@@ -1,70 +1,7 @@
-### Title:    Script to Combine TiU Hybrid Exams
+### Title:    Combine and Process TiU Hybrid Exam Results
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-14
-
-
-###--Get Inputs from User----------------------------------------------------###
-
-## Define legal file types for online results file:
-csvFilters <- matrix(c("Comma-Seperated Values", "*.csv;*.CSV"), 1, 2)
-
-## Prompt the user to select the file path to the CSV file containing the online
-## test results:
-onlineFile <- dlgOpen(title = "Please select the file that contains the online test results.",
-                      filters = csvFilters)$res
-
-if(length(onlineFile) == 0)
-    wrappedError("I cannot proceed without knowing where to find your online test results.")
-
-## Define legal file types for on-campus results file:
-xlsxFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
-                     "Excel 2007 - 2019", "*.xlsx;*.XLSX"),
-                   2, 2, byrow = TRUE)
-
-## Prompt the user to select the file path to the XLSX file containing the
-## on-campus test results:
-campusFile <- dlgOpen(title = "Please select the file that contains the on-campus test results.",
-                      filters = xlsxFilters)$res
-
-if(length(campusFile) == 0)
-    wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
-
-customScheme <-
-    dlgMessage(message = "Did the instructor request a custom scoring scheme?",
-               type    = "yesno")$res
-
-if(customScheme == "yes") {
-    ## Prompt the user to select the file path to the CSV file containing the
-    ## lookup table describing the custom scoring scheme:
-    tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
-                         filters = csvFilters)$res
-    
-    tmp        <- prepScoringScheme(tableFile)
-    scheme     <- tmp$scheme
-    scoreTable <- tmp$table
-
-    if(length(tableFile) == 0)
-        wrappedError("I cannot proceed without a user-supplied scoring table.")
-} else {
-    nQuestions <- as.numeric(
-        dlgInput("How many questions does this exam contain?")$res
-    )
-    nOptions   <- as.numeric(
-        dlgInput("How many response options are available for each question?")$res
-    )
-    passNorm   <- as.numeric(
-        dlgInput("What norm would you like to use to define a passing grade?",
-                 default = 0.55)$res
-    )
-    check <- length(nQuestions) == 0 | length(nOptions) == 0 | length(passNorm) == 0
-    if(check)
-        wrappedError("I need to know how many questions this exam contains, the number of response options for each question, and the passing norm before I can proceed.")
-}
-
-dlgMessage("Finally, I need you to tell me where you would like to save the results.")
-
-outFile <- dlgSave(title = "Where would you like to save the results?")$res
+### Modified: 2020-10-15
 
 
 ###--Process Online Gradebook Data-------------------------------------------###
@@ -116,8 +53,8 @@ online <- data.frame(onlineData[ , c("SIS.User.ID",
                      )
 colnames(online)[1 : 2] <- c("snr", "score")
 
-## Remove any students without SNRs:
-online <- online[!is.na(online$snr), ]
+## Remove any students without SNRs or scores:
+online <- online[with(online, !is.na(snr) & !is.na(score)), ]
 
 
 ###--Process On-Campus Grade Data--------------------------------------------###
@@ -170,12 +107,15 @@ campus <- data.frame(
     source    = "Campus")
 colnames(campus)[1 : 3] <- c("snr", "score", "version")
 
+## Remove any students without SNRs or scores:
+campus <- campus[with(campus, !is.na(snr) & !is.na(score)), ]
+
 ## Extract SA-computed result for testing purposes:
 campus0 <- campusGrades[ , c("S Nummer", "Resultaat")]
 colnames(campus0) <- c("snr", "result0")
 
 
-###--Merge and Process Exam Grades-------------------------------------------###
+###--Combine and Process Exam Grades-----------------------------------------###
 
 ## Check for duplicate students:
 overlap <- intersect(campus$snr, online$snr)
@@ -221,11 +161,14 @@ if(customScheme == "yes") {
                             function(x, scheme) scheme[as.character(x)],
                             scheme = scheme)
 } else {
+    ## Define the minimum grade to use:
+    minGrade <- ifelse(faculty == "tisem" & tisemMinGrade == 0, 0, 1)
+    
     ## Score the exam:
     pooled$result <- scoreExam(score      = pooled$score,
                                nQuestions = nQuestions,
                                nOptions   = nOptions,
-                               minGrade   = ifelse(faculty == "tisem", 0, 1),
+                               minGrade   = minGrade,
                                pass       = passNorm)
 
     ## Generate a lookup table for the report:
@@ -234,97 +177,18 @@ if(customScheme == "yes") {
                              Grade = scoreExam(score      = tmp,
                                                nQuestions = nQuestions,
                                                nOptions   = nOptions,
-                                               minGrade   = ifelse(faculty == "tisem", 0, 1),
+                                               minGrade   = minGrade,
                                                pass       = passNorm)
                              )
 }
+
+## Calculate the minimum passing score:
+cutoff <- with(scoreTable, Score[sum(Grade < 5.5) + 1])
 
 ## Check the results:
 tmp   <- merge(pooled, campus0, by = "snr")
 check <- all(with(tmp, result - result0) == 0)
 
 if(!check)
-    wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.")
-
-
-###--Create XLSX Output File-------------------------------------------------###
-
-## Create an empty workbook and a new sheet therein:
-wb1 <- createWorkbook()
-s1  <- createSheet(wb = wb1, sheetName = "Results")
-
-## Define a style to format headings in bold font:
-BoldStyle <- CellStyle(wb1) + Font(wb1, isBold = TRUE)
-
-## Populate column names for metadata block:
-blockData <- c("Exam Name", "Exam Date", "Batch ID", "Course ID")
-cb <- CellBlock(s1, 1, 1, 1, 4)
-CB.setRowData(cb, blockData, 1, rowStyle = BoldStyle)
-
-## Populate contents of metadata block:
-blockData <- matrix(c(cExamName, oExamName,
-                      as.character(cExamDate), as.character(oExamDate),
-                      batchId, "",
-                      courseCode, ""),
-                    nrow = 2)
-cb <- CellBlock(s1, 2, 1, 2, 4)
-CB.setMatrixData(cb, blockData, 1, 1)
-
-## Populate row names for summary measures block:
-blockData <- c("Passed (%)", "Average Grade", "Average Score", "Students (N)")
-cb <- CellBlock(s1, 6, 1, 4, 1)
-CB.setColData(cb, blockData, 1, colStyle = BoldStyle)
-
-## Populate contents of summary measures block:
-blockData <- matrix(
-    with(pooled,
-         c(round(100 * mean(result > 5.5), 1),
-           round(mean(result), 1),
-           round(mean(score), 1),
-           length(score)
-           )
-         )
-)
-cb <- CellBlock(s1, 6, 2, 4, 1)
-CB.setColData(cb, blockData, 1)
-
-## Populate contents of warning message:
-blockData <- "Please note: Canvas cannot output special characters. Therefore, student names might be displayed improperly."
-cb <- CellBlock(s1, 12, 1, 1, 1)
-CB.setRowData(cb, blockData, 1)
-
-## Populate column names for student results block:
-blockData <- c("Surname",
-               "Initials/First Name",
-               "SNR",
-               "Grade",
-               "Score",
-               "Source",
-               "Version")
-cb <- CellBlock(s1, 15, 1, 1, 7)
-CB.setRowData(cb, blockData, 1, rowStyle = BoldStyle)
-
-## Populate contents of student results block:
-addDataFrame(pooled[c("surname",
-                      "firstName",
-                      "snr",
-                      "result",
-                      "score",
-                      "source",
-                      "version")
-                    ],
-             sheet = s1,
-             col.names = FALSE,
-             row.names = FALSE,
-             startRow = 16,
-             startCol = 1)
-
-## Add another sheet to hold the scoring table:
-s2 <- createSheet(wb = wb1, sheetName = "Scoring Table")
-addDataFrame(scoreTable,
-             sheet         = s2,
-             row.names     = FALSE,
-             colnamesStyle = BoldStyle)
-
-## Save the final workbook to disk:
-saveWorkbook(wb1, outFile)
+    wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.",
+                   immediate. = TRUE)

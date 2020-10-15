@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-14
+### Modified: 2020-10-15
 
 ## Apply the exam committee's scoring rule for exams:
 scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
@@ -91,8 +91,8 @@ wrappedError <- function(msg, width = 79)
 ###--------------------------------------------------------------------------###
 
 ## Wrap warning messages:
-wrappedWarning <- function(msg, width = 79)
-    warning(paste(strwrap(msg, width), collapse = "\n"), call. = FALSE)
+wrappedWarning <- function(msg, width = 79, ...)
+    warning(paste(strwrap(msg, width), collapse = "\n"), call. = FALSE, ...)
 
 ###--------------------------------------------------------------------------###
 
