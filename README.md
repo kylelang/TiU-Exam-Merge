@@ -10,15 +10,41 @@ To use this utility, you simply need to source the `code/runJob.R` script
 from within an interactive R session and respond to the interactive dialog
 boxes.
 
+## Input Notes
+
+The results of the online examination should be provided as part of a standard
+Canvas gradebook download. This file must be in CSV format. The utility should
+work with CSV files that use commas `","` or semi-colons `";"` as field
+delimiters.
+
+The results of the on-campus examination should be provided in the standard
+scoring report provided by the Student Administration. This file must be in XLSX
+format.
+
+The name of the column containing the online exam results should have the
+following structure and format:
+
+- `exam_date/course_code/exam_name(Remotely Proctored)`
+- `YYYY-mm-dd/123456-{M/B}-{1-6}/whatever_you_want_to_call_your_exam(Remotely Proctored)`
+
+When these formatting requirements are not met, the utility should still work,
+but some metadata may not be recoverable (i.e., date of the online exam, course
+code, name of the online exam).
+
 ## Scoring Notes
 
 The program will ask if the instructor has provided a custom scoring
 scheme. After responding in the affirmative, you must supply a lookup table
-defining the custom scoring scheme. This lookup table must be a CSV file with
-two columns and no column names. The first column should contain all possible
-exam scores, and the second column should contain the corresponding grades. As
-example lookup table describing a simple linear scoring for an exam with 50
-questions is available in `data/lookup_table.csv`.
+defining the custom scoring scheme. This lookup table must:
+
+1. Be a CSV file
+1. Contain exactly two columns
+1. Not have column names
+
+The first column of the lookup table should contain all possible exam scores,
+and the second column should contain the corresponding grades. An example lookup
+table describing a simple linear scoring scheme for an exam with 50 questions is
+available in `data/lookup_table.csv`.
 
 When the instructor does not supply a custom scoring scheme (and, consequently,
 the above question is answered in the negative), the exam will be scored with
