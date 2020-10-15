@@ -70,3 +70,17 @@ The final report will contain a sheet showing the scoring table corresponding to
 whatever scoring scheme was applied to the exam. Cells in this table that
 correspond to failing grades are filled with light red, and cells corresponding
 to passing grades are filled with light blue.
+
+## Known Issues
+
+The program expects the XLSX file containing the on-campus exam results to be
+created on a Windows machine. If this file is created on a Mac, the origin used
+to define the date of the on-campus exam will probably differ from the value
+expected by the program. Consequently, the date reported for the on-campus exam
+(in the final XLSX report) will be incorrect.
+
+The program treats scores of 0 as valid results. Students who did not complete
+an exam are expected to have empty cells in the input files (these students are
+excluded from the output report). If a student has a score of zero because they
+did not take the exam, they will still be assigned the minimum grade in the
+final report.
