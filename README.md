@@ -14,8 +14,8 @@ boxes.
 
 The results of the online examination should be provided as part of a standard
 Canvas gradebook download. This file must be in CSV format. The utility should
-work with CSV files that use commas `","` or semi-colons `";"` as field
-delimiters.
+work with CSV files that use commas `","` or semi-colons `";"` as the field
+delimiter.
 
 The results of the on-campus examination should be provided in the standard
 scoring report provided by the Student Administration. This file must be in XLSX
@@ -24,8 +24,8 @@ format.
 The name of the column containing the online exam results should have the
 following structure and format:
 
-- `exam_date/course_code/exam_name(Remotely Proctored)`
-- `YYYY-mm-dd/123456-{M/B}-{1-6}/whatever_you_want_to_call_your_exam(Remotely Proctored)`
+- `exam_date/course_code/exam_name(Remotely Proctored)extra_stuff`
+- `YYYY-mm-dd/123456-{M,B}-{1-6}/whatever_name_you_like(Remotely Proctored)does_not_matter`
 
 When these formatting requirements are not met, the utility should still work,
 but some metadata may not be recoverable (i.e., date of the online exam, course
@@ -33,8 +33,8 @@ code, name of the online exam).
 
 ## Scoring Notes
 
-The program will ask if the instructor has provided a custom scoring
-scheme. After responding in the affirmative, you must supply a lookup table
+The program will ask if the instructor has provided a custom scoring scheme. If
+you respond in the affirmative, you will be asked to supply a lookup table
 defining the custom scoring scheme. This lookup table must:
 
 1. Be a CSV file
@@ -47,12 +47,12 @@ table describing a simple linear scoring scheme for an exam with 50 questions is
 available in `data/lookup_table.csv`.
 
 When the instructor does not supply a custom scoring scheme (and, consequently,
-the above question is answered in the negative), the exam will be scored with
-Tilburg University's default scoring scheme. This scheme applies a guessing
-correction so that all scores equal to or lower than the score expected from
-guessing are mapped onto the minimum grade. A reference implementation of the
-default scoring scheme (provided by the TiU Examination Committee) is available
-in `reference/grading.R`.
+the aforementioned question is answered in the negative), the exam will be
+scored with Tilburg University's default scoring scheme. This scheme applies a
+guessing correction so that all scores equal to or lower than the score expected
+from guessing are mapped onto the minimum grade. A reference implementation of
+the default scoring scheme (provided by the TiU Examination Committee) is
+available in `reference/grading.R`.
 
 When applying the default scoring scheme, you will be prompted to provide three
 pieces of information:
