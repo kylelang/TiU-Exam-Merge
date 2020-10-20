@@ -1,7 +1,7 @@
 ### Title:    Create an XLSX Output File
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-15
-### Modified: 2020-10-15
+### Modified: 2020-10-20
 
 
 ## Create an empty workbook and a new sheet therein:
@@ -22,15 +22,29 @@ RightStyle <- CellStyle(wb1) + Alignment(horizontal = "ALIGN_RIGHT")
 
 ## Populate column names for metadata block:
 blockData <- c("Exam Date", "Identifier", "Exam Name")
-cb <- CellBlock(s1, 1, 1, 1, 4)
+cb        <- CellBlock(s1, 1, 1, 1, 3)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldLeftStyle)
 
+blockData <- matrix(c(sapply(campusMeta, "[[", x = "date"),
+                      sapply(onlineMeta, "[[", x = "date"),
+                      sapply(campusMeta, "[[", x = "id"),
+                      sapply(onlineMeta, "[[", x = "id"),
+                      sapply(campusMeta, "[[", x = "name"),
+                      sapply(onlineMeta, "[[", x = "name")
+                      ),
+                    ncol = 3)
+
 ## Populate contents of metadata block:
-blockData <- matrix(c(as.character(cExamDate), as.character(oExamDate),
-                      batchId, courseCode,
-                      cExamName, oExamName),
-                    nrow = 2)
-cb <- CellBlock(s1, 2, 1, 2, 3)
+blockData <- matrix(c(sapply(campusMeta, "[[", x = "date"),
+                      sapply(onlineMeta, "[[", x = "date"),
+                      sapply(campusMeta, "[[", x = "id"),
+                      sapply(onlineMeta, "[[", x = "id"),
+                      sapply(campusMeta, "[[", x = "name"),
+                      sapply(onlineMeta, "[[", x = "name")
+                      ),
+                    ncol = 3)
+metaRows  <- nrow(blockData) + 1
+cb        <- CellBlock(s1, 2, 1, metaRows, 3)
 CB.setMatrixData(cb, blockData, 1, 1, cellStyle = LeftStyle)
 
 ## Populate row names for summary measures block:
@@ -39,7 +53,7 @@ blockData <- c("Cutoff Score",
                "Average Grade",
                "Average Score",
                "Students (N)")
-cb <- CellBlock(s1, 6, 1, 5, 1)
+cb        <- CellBlock(s1, metaRows + 3, 1, 5, 1)
 CB.setColData(cb, blockData, 1, colStyle = BoldLeftStyle)
 
 ## Populate contents of summary measures block:
@@ -54,30 +68,30 @@ blockData <- matrix(
            )
       )
 )
-cb <- CellBlock(s1, 6, 2, 5, 1)
+cb        <- CellBlock(s1, metaRows + 3, 2, 5, 1)
 CB.setColData(cb, blockData, 1, colStyle = LeftStyle)
 
 ## Populate heading of warning message:
 blockData <- "Please note:" 
-cb <- CellBlock(s1, 13, 1, 1, 1)
+cb        <- CellBlock(s1, metaRows + 10, 1, 1, 1)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldLeftStyle)
 
 ## Populate contents of warning message:
-blockData <- "Canvas cannot output special characters. Therefore, student names might be displayed improperly."
-cb <- CellBlock(s1, 13, 2, 1, 1)
+blockData <- "Canvas cannot output special characters. Therefore, some student names might be displayed improperly."
+cb        <- CellBlock(s1, metaRows + 10, 2, 1, 1)
 CB.setRowData(cb, blockData, 1, rowStyle = LeftStyle)
 
 ## Populate column names for student results block:
 blockData <- c("Surname", "Initials/First Name", "SNR")
-cb <- CellBlock(s1, 16, 1, 1, 3)
+cb        <- CellBlock(s1, metaRows + 13, 1, 1, 3)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldLeftStyle)
 
 blockData <- c("Grade", "Score")
-cb <- CellBlock(s1, 16, 4, 1, 2)
+cb        <- CellBlock(s1, metaRows + 13, 4, 1, 2)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldRightStyle)
 
 blockData <- c("Source", "Version")
-cb <- CellBlock(s1, 16, 6, 1, 2)
+cb        <- CellBlock(s1, metaRows + 13, 6, 1, 2)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldLeftStyle)
 
 ## Populate contents of student results block:
@@ -85,7 +99,7 @@ addDataFrame(pooled[c("surname", "firstName", "snr")],
              sheet     = s1,
              col.names = FALSE,
              row.names = FALSE,
-             startRow  = 17,
+             startRow  = metaRows + 14,
              startCol  = 1,
              colStyle  = list("3" = LeftStyle)
              )
@@ -94,14 +108,14 @@ addDataFrame(pooled[c("result", "score")],
              sheet     = s1,
              col.names = FALSE,
              row.names = FALSE,
-             startRow  = 17,
+             startRow  = metaRows + 14,
              startCol  = 4)
 
 addDataFrame(pooled[c("source", "version")],
              sheet     = s1,
              col.names = FALSE,
              row.names = FALSE,
-             startRow  = 17,
+             startRow  = metaRows + 14,
              startCol  = 6)
 
 ###--------------------------------------------------------------------------###

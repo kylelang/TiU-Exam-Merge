@@ -22,7 +22,7 @@ xlsxFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
 
 ## Ask the user how many on-campus test files they want to read in:
 campusCount <- as.numeric(
-    dlgInput("How many different files comprise the full set of on-campus test results?")$res
+    dlgInput("How many sets (i.e., unique files) of on-campus results do you need to process?")$res
 )
 
 ## Prompt the user to select the file path(s) to the XLSX file(s) containing the

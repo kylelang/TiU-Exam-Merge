@@ -96,10 +96,6 @@ wrappedWarning <- function(msg, width = 79, ...)
 
 ###--------------------------------------------------------------------------###
 
-                                        #data    <- onlineData
-                                        #names   <- onlineNames
-                                        #pattern <- "\\d{4}\\.\\d{2}\\.\\d{2}.*Remotely\\.Proctored|OPT\\.OUT"
-
 ## Find the index of the column containing the online exam results:
 findExam <- function(data,
                      names,
@@ -171,7 +167,7 @@ autoReadCsv <- function(file, ...) {
 
 ###--------------------------------------------------------------------------###
 
-## Process one on-campus results file:
+## Process one on-campus results file(s):
 processCampus <- function(filePath) {
     ## Read in one set of on-campus grades:
     data <- read.xlsx(filePath, sheetIndex = 1, stringsAsFactors = FALSE)
@@ -210,9 +206,11 @@ processCampus <- function(filePath) {
     faculty  <- tolower(cn[grep("Opleiding", cn) + 1])
     batchId  <- as.numeric(cn[grep("Batch\\.ID", cn) + 1])
     examName <- c2[grep("Toetsnaam", c1)]
-    examDate <- as.Date(as.numeric(cn[grep("Toetsdatum", cn) + 1]),
-                         origin = "1899-12-30")
-
+    examDate <- as.character(
+        as.Date(as.numeric(cn[grep("Toetsdatum", cn) + 1]),
+                origin = "1899-12-30")
+    )
+    
     ## Extract the relevent columns:
     outData <- data.frame(
         grades[ , c("S Nummer", "Score", "Versie")],
@@ -238,10 +236,7 @@ processCampus <- function(filePath) {
 
 ###--------------------------------------------------------------------------###
 
-                                        #data  <- onlineData
-                                        #names <- onlineNames
-                                        #index <- examCol[2]
-
+## Process the online results file:
 processOnline <- function(index, data, names) {
     ## Extract metadata from online exam name:
     examName <- names[index]
@@ -253,12 +248,20 @@ processOnline <- function(index, data, names) {
     courseCode <- tryCatch(substr(examName, tmp[[1]][1, 1] + 1, tmp[[1]][2, 2] - 1),
                            error = function(e) "Not Recovered")
 
+    if(grepl("proctored", examName, ignore.case = TRUE))
+        version <- "Proctored"
+    else if(grepl("opt-out", examName, ignore.case = TRUE))
+        version <- "Not Proctored"
+    else
+        version <- ""
+    
     tmp <- try(
         substr(examName, tmp[[1]][2, 2] + 1, tmp[[2]][1, 1] - 1),
         silent = TRUE
     )
     if(class(tmp) != "try-error") examName <- str_trim(tmp)
 
+    
     ## Parse student names:
     stuNames <- sapply(data$Student, parseName, USE.NAMES = FALSE)
 
@@ -268,7 +271,7 @@ processOnline <- function(index, data, names) {
                                     ],
                          surname          = stuNames["name2", ],
                          firstName        = stuNames["name1", ],
-                         version          = "",
+                         version          = version,
                          source           = "Online",
                          stringsAsFactors = FALSE)
     colnames(outData)[1 : 2] <- c("snr", "score")

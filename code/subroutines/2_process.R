@@ -23,6 +23,7 @@ onlineData <- onlineData[-c(1 : 2), ]
 ## Find the exam column(s) in the Online gradebook:
 examCol <- findExam(data = onlineData, names = onlineNames)
 
+## Process the gradebook data:
 tmp <- lapply(examCol, processOnline, data = onlineData, names = onlineNames)
 
 onlineData <- do.call(rbind, lapply(tmp, "[[", x = "data"))
@@ -41,7 +42,7 @@ campusMeta  <- lapply(tmp, "[", x = -c(1, 2))
 ###--Combine and Process Exam Grades-----------------------------------------###
 
 ## Stack the relevent columns from the online and on-campus files:
-pooled <- rbind(campusData, online)
+pooled <- rbind(campusData, onlineData)
 
 ## Check for duplicate students:
 flag <- duplicated(pooled$snr)
@@ -85,7 +86,7 @@ if(customScheme == "yes") {
 } else {
     ## Define the minimum grade to use:
     minGrade <-
-        ifelse(campus[[1]]$faculty == "tisem" & tisemMinGrade == 0, 0, 1)
+        ifelse(campusMeta[[1]]$faculty == "tisem" & tisemMinGrade == 0, 0, 1)
     
     ## Score the exam:
     pooled$result <- scoreExam(score      = pooled$score,
