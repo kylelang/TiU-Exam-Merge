@@ -1,7 +1,7 @@
 ### Title:    Define the Parameters of a TiU Exam Combination Job
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-15
+### Modified: 2020-10-20
 
 
 ## Define legal file types for online results file:
@@ -20,10 +20,26 @@ xlsxFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
                      "Excel 2007 - 2019", "*.xlsx;*.XLSX"),
                    2, 2, byrow = TRUE)
 
-## Prompt the user to select the file path to the XLSX file containing the
+## Ask the user how many on-campus test files they want to read in:
+campusCount <- as.numeric(
+    dlgInput("How many different files comprise the full set of on-campus test results?")$res
+)
+
+## Prompt the user to select the file path(s) to the XLSX file(s) containing the
 ## on-campus test results:
-campusFile <- dlgOpen(title = "Please select the file that contains the on-campus test results.",
-                      filters = xlsxFilters)$res
+if(campusCount == 1) {
+    msg <- "Please select the file that contains the on-campus test results."
+} else {
+    msg <- "Please select the file that contains the first set of on-campus test results."
+}
+
+campusFile <- list()
+for(i in 1 : campusCount) {
+    if(i == 2)
+        msg <- gsub("first", "next", msg)
+    
+    campusFile[[i]] <- dlgOpen(title = msg, filters = xlsxFilters)$res
+}
 
 if(length(campusFile) == 0)
     wrappedError("I cannot proceed without knowing where to find your on-campus test results.")

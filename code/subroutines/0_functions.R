@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-15
+### Modified: 2020-10-20
 
 ## Apply the exam committee's scoring rule for exams:
 scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
@@ -96,10 +96,14 @@ wrappedWarning <- function(msg, width = 79, ...)
 
 ###--------------------------------------------------------------------------###
 
+                                        #data    <- onlineData
+                                        #names   <- onlineNames
+                                        #pattern <- "\\d{4}\\.\\d{2}\\.\\d{2}.*Remotely\\.Proctored|OPT\\.OUT"
+
 ## Find the index of the column containing the online exam results:
 findExam <- function(data,
                      names,
-                     pattern = "\\d{4}\\.\\d{2}\\.\\d{2}.*Remotely\\.Proctored")
+                     pattern = "\\d{4}\\.\\d{2}\\.\\d{2}.*Remotely\\.Proctored|OPT\\.OUT")
 {
     ## Try to find the exam column in the Online gradebook:
     examCol <- grep(pattern, colnames(data))
@@ -119,10 +123,12 @@ findExam <- function(data,
         dlgMessage("I've found multiple columns that seem like they may contain your online exam results. So, you'll need to select the appropriate column.")
 
         opt0      <- "None of these columns contains my online exam results."
-        selection <- dlgList(choices = c(names[examCol], opt0),
-                             title = "Select online exam results")$res
-
-        if(selection == opt0)
+        selection <- dlgList(choices  = c(names[examCol], opt0),
+                             multiple = TRUE,
+                             title    = "Select online exam results")$res
+        
+        fail <- length(selection) == 0 | opt0 %in% selection
+        if(fail)
             success <- "no"
         else {
             success <- "yes"
@@ -134,8 +140,9 @@ findExam <- function(data,
     if(length(examCol) == 0 || length(success) == 0 || success == "no") {
         dlgMessage("I haven't been able to automatically detect your online exam results. So, I need you to identify the appropriate column.")
 
-        selection <- dlgList(choices = names,
-                             title = "Select online exam results.")$res
+        selection <- dlgList(choices  = names,
+                             multiple = TRUE,
+                             title    = "Select online exam results.")$res
 
         if(length(selection) == 0)
             wrappedError("I cannot proceed without knowing which column contains your online exam results.")
@@ -160,4 +167,115 @@ autoReadCsv <- function(file, ...) {
     out <- read.csv(file, sep = sep, ...)
 
     list(data = out, sep = sep)
+}
+
+###--------------------------------------------------------------------------###
+
+## Process one on-campus results file:
+processCampus <- function(filePath) {
+    ## Read in one set of on-campus grades:
+    data <- read.xlsx(filePath, sheetIndex = 1, stringsAsFactors = FALSE)
+    
+    ## Extract first and second columns:
+    c1 <- data[[1]]
+    c2 <- data[[2]]
+
+    ## Find the rows containing individual grades:
+    gradeRows <- grep("\\d{6,7}", c1)
+
+    ## Extract the individual grade information:
+    grades           <- as.data.frame(data[gradeRows, ])
+    colnames(grades) <- as.character(data[gradeRows[1] - 1, ])
+
+    ## Check for students with broken SNRs:
+    extraCol <- grades[[3]]
+    snrFlag  <- !is.na(extraCol)
+
+    ## Replace any broken SNRs with the corrections provided by the SA:
+    if(any(snrFlag))
+        for(i in which(snrFlag)) {
+            x   <- extraCol[i]
+            tmp <- unlist(str_locate_all(x, "\\d{6,7}\\s"))
+
+            grades[i, "S Nummer"]  <- substr(x, tmp[1], tmp[2] - 1)
+            grades[i, "Naam"]      <- substr(x, tmp[2] + 1, nchar(x))
+        }
+
+    ## Parse student names:
+    stuNames <- sapply(grades$Naam, parseName, USE.NAMES = FALSE)
+
+    ## Extract metadata from the on-campus file:
+    cn       <- colnames(data)
+    cn       <- gsub("^X", "", cn)
+    faculty  <- tolower(cn[grep("Opleiding", cn) + 1])
+    batchId  <- as.numeric(cn[grep("Batch\\.ID", cn) + 1])
+    examName <- c2[grep("Toetsnaam", c1)]
+    examDate <- as.Date(as.numeric(cn[grep("Toetsdatum", cn) + 1]),
+                         origin = "1899-12-30")
+
+    ## Extract the relevent columns:
+    outData <- data.frame(
+        grades[ , c("S Nummer", "Score", "Versie")],
+        surname   = stuNames["name2", ],
+        firstName = stuNames["name1", ],
+        source    = "Campus")
+    colnames(outData)[1 : 3] <- c("snr", "score", "version")
+    
+    ## Remove any students without SNRs or scores:
+    outData <- outData[with(outData, !is.na(snr) & !is.na(score)), ]
+
+    ## Extract SA-computed result for testing purposes:
+    outData0           <- grades[ , c("S Nummer", "Resultaat")]
+    colnames(outData0) <- c("snr", "result0")
+    
+    list(data    = outData,
+         data0   = outData0,
+         faculty = faculty,
+         id      = batchId,
+         name    = examName,
+         date    = examDate)
+}
+
+###--------------------------------------------------------------------------###
+
+                                        #data  <- onlineData
+                                        #names <- onlineNames
+                                        #index <- examCol[2]
+
+processOnline <- function(index, data, names) {
+    ## Extract metadata from online exam name:
+    examName <- names[index]
+    tmp      <- str_locate_all(examName, c("/", "\\(Remotely Proctored|OPT-OUT"))
+    
+    examDate <- tryCatch(substr(examName, 1, tmp[[1]][1, 1] - 1),
+                          error = function(e) "Not Recovered")
+
+    courseCode <- tryCatch(substr(examName, tmp[[1]][1, 1] + 1, tmp[[1]][2, 2] - 1),
+                           error = function(e) "Not Recovered")
+
+    tmp <- try(
+        substr(examName, tmp[[1]][2, 2] + 1, tmp[[2]][1, 1] - 1),
+        silent = TRUE
+    )
+    if(class(tmp) != "try-error") examName <- str_trim(tmp)
+
+    ## Parse student names:
+    stuNames <- sapply(data$Student, parseName, USE.NAMES = FALSE)
+
+    ## Extract the relevent columns:
+    outData <- data.frame(data[ , c("SIS.User.ID",
+                                         colnames(data)[index])
+                                    ],
+                         surname          = stuNames["name2", ],
+                         firstName        = stuNames["name1", ],
+                         version          = "",
+                         source           = "Online",
+                         stringsAsFactors = FALSE)
+    colnames(outData)[1 : 2] <- c("snr", "score")
+
+    ## Remove any students without SNRs or scores:
+    drops   <- with(outData, is.na(snr) | is.na(score) | score == "")
+    outData <- outData[!drops, ]
+
+    list(data = outData, name = examName, date = examDate, id = courseCode)
 }
