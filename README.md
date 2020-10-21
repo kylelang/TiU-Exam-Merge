@@ -8,10 +8,13 @@ a report for instructors as an XLSX workbook.
 
 There are multiple ways to use this program:
 
-1. On Windows machines, you can execute the `code/runJob.bat` batch file.
-1. On Linux (and Mac?) machines, you can execute the `code/runJob.sh` script.
+1. On Windows machines, you can execute the `code/runJob.bat` batch file (e.g.,
+   by double-clicking the file from within the `code` directory).
+1. On Linux (and Mac?) machines, you can execute the `code/runJob.sh` script
+   (e.g., by navigating to the `code` directory and executing `./runJob.sh` from
+   the shell).
 1. On all platforms, you can source the `code/runJob.R` script from within an
-interactive R session.
+   interactive R session.
 
 Regardless of how the program is executed, the utility operates by
 parameterizing the job through a series of interactive dialog boxes. So, usage
