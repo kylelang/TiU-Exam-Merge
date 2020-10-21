@@ -116,13 +116,13 @@ findExam <- function(data,
     ## We found multiple candiate columns:
     if(length(examCol) > 1) {
         ## Confirm the exam column with the user:
-        dlgMessage("I've found multiple columns that seem like they may contain your online exam results. So, you'll need to select the appropriate column.")
+        dlgMessage("I've found multiple columns that seem like they may contain your online exam results. So, you'll need to select the appropriate column(s).")
 
         opt0      <- "None of these columns contains my online exam results."
         selection <- dlgList(choices  = c(names[examCol], opt0),
                              multiple = TRUE,
                              title    = "Select online exam results")$res
-        
+
         fail <- length(selection) == 0 | opt0 %in% selection
         if(fail)
             success <- "no"
@@ -134,7 +134,7 @@ findExam <- function(data,
 
     ## Ask the user to select the exam column, if we can't find it automatically:
     if(length(examCol) == 0 || length(success) == 0 || success == "no") {
-        dlgMessage("I haven't been able to automatically detect your online exam results. So, I need you to identify the appropriate column.")
+        dlgMessage("I haven't been able to automatically detect your online exam results. So, I need you to identify the appropriate column(s).")
 
         selection <- dlgList(choices  = names,
                              multiple = TRUE,
@@ -171,7 +171,7 @@ autoReadCsv <- function(file, ...) {
 processCampus <- function(filePath) {
     ## Read in one set of on-campus grades:
     data <- read.xlsx(filePath, sheetIndex = 1, stringsAsFactors = FALSE)
-    
+
     ## Extract first and second columns:
     c1 <- data[[1]]
     c2 <- data[[2]]
@@ -210,7 +210,7 @@ processCampus <- function(filePath) {
         as.Date(as.numeric(cn[grep("Toetsdatum", cn) + 1]),
                 origin = "1899-12-30")
     )
-    
+
     ## Extract the relevent columns:
     outData <- data.frame(
         grades[ , c("S Nummer", "Score", "Versie")],
@@ -218,14 +218,14 @@ processCampus <- function(filePath) {
         firstName = stuNames["name1", ],
         source    = "Campus")
     colnames(outData)[1 : 3] <- c("snr", "score", "version")
-    
+
     ## Remove any students without SNRs or scores:
     outData <- outData[with(outData, !is.na(snr) & !is.na(score)), ]
 
     ## Extract SA-computed result for testing purposes:
     outData0           <- grades[ , c("S Nummer", "Resultaat")]
     colnames(outData0) <- c("snr", "result0")
-    
+
     list(data    = outData,
          data0   = outData0,
          faculty = faculty,
@@ -241,7 +241,7 @@ processOnline <- function(index, data, names) {
     ## Extract metadata from online exam name:
     examName <- names[index]
     tmp      <- str_locate_all(examName, c("/", "\\(Remotely Proctored|OPT-OUT"))
-    
+
     examDate <- tryCatch(substr(examName, 1, tmp[[1]][1, 1] - 1),
                           error = function(e) "Not Recovered")
 
@@ -254,14 +254,14 @@ processOnline <- function(index, data, names) {
         version <- "Not Proctored"
     else
         version <- ""
-    
+
     tmp <- try(
         substr(examName, tmp[[1]][2, 2] + 1, tmp[[2]][1, 1] - 1),
         silent = TRUE
     )
     if(class(tmp) != "try-error") examName <- str_trim(tmp)
 
-    
+
     ## Parse student names:
     stuNames <- sapply(data$Student, parseName, USE.NAMES = FALSE)
 

@@ -22,7 +22,7 @@ xlsxFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
 
 ## Ask the user how many on-campus test files they want to read in:
 campusCount <- as.numeric(
-    dlgInput("How many sets (i.e., unique files) of on-campus results do you need to process?")$res
+    dlgInput("How many sets of on-campus results (i.e., unique files) do you need to process?")$res
 )
 
 ## Prompt the user to select the file path(s) to the XLSX file(s) containing the
@@ -37,7 +37,7 @@ campusFile <- list()
 for(i in 1 : campusCount) {
     if(i == 2)
         msg <- gsub("first", "next", msg)
-    
+
     campusFile[[i]] <- dlgOpen(title = msg, filters = xlsxFilters)$res
 }
 
@@ -53,7 +53,7 @@ if(customScheme == "yes") {
     ## lookup table describing the custom scoring scheme:
     tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
                          filters = csvFilters)$res
-    
+
     tmp        <- prepScoringScheme(tableFile)
     scheme     <- tmp$scheme
     scoreTable <- tmp$table

@@ -54,7 +54,7 @@ if(any(flag)) {
     ## Save the data on duplicate students:
     dupFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
     write.table(tmp, file = dupFile, sep = "\t", row.names = FALSE)
-    
+
     msg <- paste0("It looks like ",
                   sum(flag),
                   " students are represented in multiple input files. I have saved their information in the file: ",
@@ -87,7 +87,7 @@ if(customScheme == "yes") {
     ## Define the minimum grade to use:
     minGrade <-
         ifelse(campusMeta[[1]]$faculty == "tisem" & tisemMinGrade == 0, 0, 1)
-    
+
     ## Score the exam:
     pooled$result <- scoreExam(score      = pooled$score,
                                nQuestions = nQuestions,
@@ -96,7 +96,7 @@ if(customScheme == "yes") {
                                pass       = passNorm)
 
     ## Generate a lookup table for the report:
-    tmp        <- 1 : nQuestions
+    tmp        <- 0 : nQuestions
     scoreTable <- data.frame(Score = tmp,
                              Grade = scoreExam(score      = tmp,
                                                nQuestions = nQuestions,
