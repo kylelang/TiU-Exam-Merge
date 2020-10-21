@@ -32,11 +32,11 @@ The results of the on-campus examinations should be provided in the standard
 scoring report provided by the Student Administration. These files must be in
 XLSX format.
 
-The full set of on-campus results may be comprised of multiple files. In this
-case, you will be prompted to locate each of the pertinent files when setting up
-the job. Multiple sets of online results are also supported, but the program
-assumes that these results will be represented as multiple columns in a single
-input file. So, you may only read in one file of online results.
+The full set of on-campus results may comprise multiple files. In this case, you
+will be prompted to locate each of the pertinent files when setting up the
+job. Multiple sets of online results are also supported, but the program assumes
+that these results will be represented as multiple columns in a single input
+file. So, you may only read in one file of online results.
 
 The name of the column containing the online exam results should have a specific
 structure and format.
