@@ -1,7 +1,7 @@
 ### Title:    Define the Parameters of a TiU Exam Combination Job
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-20
+### Modified: 2020-10-22
 
 
 ## Define legal file types for online results file:
@@ -79,3 +79,7 @@ if(customScheme == "yes") {
 dlgMessage("Finally, I need you to tell me where you would like to save the results.")
 
 outFile <- dlgSave(title = "Where would you like to save the results?")$res
+
+## Add a file extension to the output file, if necessary:
+if(!grepl("\\.xlsx$|\\.XLSX$", outFile))
+    outFile <- paste(outFile, "xlsx", sep = ".")

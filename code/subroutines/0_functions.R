@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-20
+### Modified: 2020-10-22
 
 ## Apply the exam committee's scoring rule for exams:
 scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
@@ -236,6 +236,10 @@ processCampus <- function(filePath) {
 
 ###--------------------------------------------------------------------------###
 
+                                        #index <- examCol
+                                        #data  <- onlineData
+                                        #names <- onlineNames
+
 ## Process the online results file:
 processOnline <- function(index, data, names) {
     ## Extract metadata from online exam name:
@@ -276,9 +280,18 @@ processOnline <- function(index, data, names) {
                          stringsAsFactors = FALSE)
     colnames(outData)[1 : 2] <- c("snr", "score")
 
+    outData$snr
+    outData$score
+    
     ## Remove any students without SNRs or scores:
-    drops   <- with(outData, is.na(snr) | is.na(score) | score == "")
+    drops   <- with(outData, empty(snr) | empty(score))
     outData <- outData[!drops, ]
 
     list(data = outData, name = examName, date = examDate, id = courseCode)
 }
+
+###--------------------------------------------------------------------------###
+
+## Find different flavors of empty cell:
+empty <- function(x, key = NULL)
+    is.na(x) | length(x) == 0 | x == "" | x == "N/A" | x %in% key 
