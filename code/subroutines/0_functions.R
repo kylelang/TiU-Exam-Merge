@@ -236,12 +236,8 @@ processCampus <- function(filePath) {
 
 ###--------------------------------------------------------------------------###
 
-                                        #index <- examCol
-                                        #data  <- onlineData
-                                        #names <- onlineNames
-
 ## Process the online results file:
-processOnline <- function(index, data, names) {
+processOnline <- function(index, data, names, ...) {
     ## Extract metadata from online exam name:
     examName <- names[index]
     tmp      <- str_locate_all(examName, c("/", "\\(Remotely Proctored|OPT-OUT"))
@@ -284,7 +280,7 @@ processOnline <- function(index, data, names) {
     outData$score
     
     ## Remove any students without SNRs or scores:
-    drops   <- with(outData, empty(snr) | empty(score))
+    drops   <- with(outData, empty(snr, ...) | empty(score, ...))
     outData <- outData[!drops, ]
 
     list(data = outData, name = examName, date = examDate, id = courseCode)
@@ -293,5 +289,5 @@ processOnline <- function(index, data, names) {
 ###--------------------------------------------------------------------------###
 
 ## Find different flavors of empty cell:
-empty <- function(x, key = NULL)
-    is.na(x) | length(x) == 0 | x == "" | x == "N/A" | x %in% key 
+empty <- function(x, codes = NULL)
+    is.na(x) | length(x) == 0 | x == "" | x %in% codes

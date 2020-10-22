@@ -1,7 +1,7 @@
 ### Title:    Combine and Process TiU Hybrid Exam Results
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-20
+### Modified: 2020-10-22
 
 
 ###--Process Online Gradebook Data-------------------------------------------###
@@ -24,7 +24,11 @@ onlineData <- onlineData[-c(1 : 2), ]
 examCol <- findExam(data = onlineData, names = onlineNames)
 
 ## Process the gradebook data:
-tmp <- lapply(examCol, processOnline, data = onlineData, names = onlineNames)
+tmp <- lapply(X     = examCol,
+              FUN   = processOnline,
+              data  = onlineData,
+              names = onlineNames,
+              codes = missingScoreCodes)
 
 onlineData <- do.call(rbind, lapply(tmp, "[[", x = "data"))
 onlineMeta <- lapply(tmp, "[", x = -1)
