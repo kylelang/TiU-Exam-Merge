@@ -1,7 +1,7 @@
 ### Title:    Combine and Process TiU Hybrid Exam Results
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-22
+### Modified: 2020-10-23
 
 
 ###--Process Online Gradebook Data-------------------------------------------###
@@ -73,7 +73,7 @@ pooled$score        <- as.numeric(pooled$score)
 campusData0$result0 <- as.numeric(campusData0$result0)
 
 ## Score the exams:
-if(customScheme == "yes") {
+if(scoreScheme == scoreOpts["wo3"]) {
     ## Make sure all observed scores are represented in the lookup table:
     extra <- setdiff(sort(unique(pooled$score)), names(scheme))
     if(length(extra) > 0) {
@@ -88,21 +88,30 @@ if(customScheme == "yes") {
                             function(x, scheme) scheme[as.character(x)],
                             scheme = scheme)
 } else {
+    scoringIndex  <- which(scoreOpts %in% scoreScheme)
+    
     ## Define the minimum grade to use:
-    minGrade <-
-        ifelse(campusMeta[[1]]$faculty == "tisem" & tisemMinGrade == 0, 0, 1)
-
+    minGrade <- switch(scoringIndex,
+                       ifelse(campusMeta[[1]]$faculty == "tisem" &
+                              tisemMinGrade == 0,
+                              0,
+                              1),
+                       1,
+                       0)
+    
     ## Score the exam:
     pooled$result <- scoreExam(score      = pooled$score,
+                               what       = scoringIndex,
                                nQuestions = nQuestions,
                                nOptions   = nOptions,
                                minGrade   = minGrade,
                                pass       = passNorm)
-
+    
     ## Generate a lookup table for the report:
     tmp        <- 0 : nQuestions
     scoreTable <- data.frame(Score = tmp,
                              Grade = scoreExam(score      = tmp,
+                                               what       = scoringIndex,
                                                nQuestions = nQuestions,
                                                nOptions   = nOptions,
                                                minGrade   = minGrade,

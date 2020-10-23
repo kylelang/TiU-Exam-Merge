@@ -57,9 +57,32 @@ code, name of the online exam).
 
 ## Scoring Notes
 
-The program will ask if the instructor has provided a custom scoring scheme. If
-you respond in the affirmative, you will be asked to supply a lookup table
-defining the custom scoring scheme. This lookup table must:
+You will be prompted to select between four different scoring options:
+
+1. The first scoring rule listed on the paper work order form
+1. The second scoring rule listed on the paper work order form
+1. A custom scoring scheme provided by the instructor as part of the third
+   scoring option listed on the paper work order form
+1. The new standard guessing correction formula that will be adopted
+   university-wide in 2021
+
+When applying any of the first three scoring schemes, you will be prompted to
+indicate the number of questions on the exam and the number of response options
+(i.e., alternatives) for each question. If you select the final scoring scheme,
+you will also be prompted to indicate the passing norm to use in defining the
+minimum passing score. 
+
+The passing norm must be a value between 0 and 1 that corresponds to the minimum
+guessing-corrected proportional score that a student must achieve to earn a
+grade of 5.5. By default, this value is set to 0.55. If you are not sure of what
+value to choose, accept the default.
+
+A reference implementation of the new standard guessing correction formula
+(provided by the TiU Examination Committee) is available in
+`reference/grading.R`.
+
+If you opt to apply a custom scoring scheme, you will be asked to supply a
+lookup table defining the custom scoring scheme. This lookup table must:
 
 1. Be a CSV file
 1. Contain exactly two columns
@@ -70,30 +93,11 @@ and the second column should contain the corresponding grades. An example lookup
 table describing a simple linear scoring scheme for an exam with 50 questions is
 available in `data/lookup_table.csv`.
 
-When the instructor does not supply a custom scoring scheme (and, consequently,
-the aforementioned question is answered in the negative), the exam will be
-scored with Tilburg University's default scoring scheme. This scheme applies a
-guessing correction so that all scores equal to or lower than the score expected
-from guessing are mapped onto the minimum grade. A reference implementation of
-the default scoring scheme (provided by the TiU Examination Committee) is
-available in `reference/grading.R`.
-
-When applying the default scoring scheme, you will be prompted to provide three
-pieces of information:
-
-1. The number of questions on the exam
-1. The number of response options (i.e., alternatives) for each question
-1. The passing norm to use in defining the minimum passing score
-
-The passing norm must be a value between 0 and 1 that corresponds to the minimum
-guessing-corrected proportional score that a student must achieve to earn a
-grade of 5.5. By default, this value is set to 0.55. If you are not sure of what
-value to choose, accept the default.
-
-The final report will contain a sheet showing the scoring table corresponding to
-whatever scoring scheme was applied to the exam. Cells in this table that
-correspond to failing grades are filled with light red, and cells corresponding
-to passing grades are filled with light blue.
+Regardless of how the exam is scored, the final report will contain a sheet
+showing the scoring table corresponding to whatever scoring scheme was applied
+to the exam. Cells in this table that correspond to failing grades are filled
+with light red, and cells corresponding to passing grades are filled with light
+blue.
 
 ## Known Issues
 

@@ -1,10 +1,34 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-22
+### Modified: 2020-10-23
 
-## Apply the exam committee's scoring rule for exams:
-scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
+
+## Score the exam according to one of the three functional scoring rules:
+scoreExam <- function(score, what, nQuestions, nOptions, minGrade, pass = 0.55) 
+    switch(what,
+           ## Post-2020 standard guessing correction:
+           scoreRule1(score      = score,
+                      nQuestions = nQuestions,
+                      nOptions   = nOptions,
+                      minGrade   = minGrade,
+                      pass       = pass),
+           ## First option from work order form:
+           scoreRule2(score      = score,
+                      nQuestions = nQuestions,
+                      nOptions   = nOptions,
+                      minGrade   = 1),
+           ## Second option from work order form:
+           scoreRule1(score      = score,
+                      nQuestions = nQuestions,
+                      nOptions   = nOptions,
+                      minGrade   = 0)
+           )
+
+###--------------------------------------------------------------------------###
+
+## Function implementing the exam committee's post-2020 scoring rule:
+scoreRule1 <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
     ## Compute score expected by guessing:
     guess <- nQuestions / nOptions
 
@@ -13,16 +37,30 @@ scoreExam <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
     knowledge[score < guess] <- 0 # Negative values are not allowed
 
     ## Convert raw score to a [minGrade, 10] scale:
-    result <- rep(0, length(score))
+    grade <- rep(0, length(score))
     for(i in 1 : length(score)) {
         if(is.na(knowledge[i]))
-            result[i] <- NA
+            grade[i] <- NA
         else if(knowledge[i] < pass)
-            result[i] <- minGrade + knowledge[i] * (5.5 - minGrade) / pass
+            grade[i] <- minGrade + knowledge[i] * (5.5 - minGrade) / pass
         else
-            result[i] <- 5.5 + ((knowledge[i] - pass) / (1 - pass)) * (10 - 5.5)
+            grade[i] <- 5.5 + ((knowledge[i] - pass) / (1 - pass)) * 4.5
     }
-    round(result, 1)
+    round(grade, 1)
+}
+
+###--------------------------------------------------------------------------###
+
+## Function implementing the first scoring option from the work order form:
+scoreRule2 <- function(score, nQuestions, nOptions, minGrade = 1) {
+    guess <- nQuestions / nOptions
+    pass  <- guess + ((nQuestions - guess) / 2)
+    
+    grade <- ((5.5 - minGrade) / pass) * score + minGrade
+    tmp   <- (4.5 / (nQuestions - pass)) * (score - pass) + 5.5
+
+    grade[score >= pass] <- tmp[score >= pass]
+    round(grade, 1)
 }
 
 ###--------------------------------------------------------------------------###

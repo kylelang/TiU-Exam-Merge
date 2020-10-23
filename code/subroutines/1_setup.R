@@ -1,7 +1,7 @@
 ### Title:    Define the Parameters of a TiU Exam Combination Job
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-22
+### Modified: 2020-10-23
 
 
 ## Define legal file types for online results file:
@@ -44,11 +44,16 @@ for(i in 1 : campusCount) {
 if(length(campusFile) == 0)
     wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 
-customScheme <-
-    dlgMessage(message = "Did the instructor request a custom scoring scheme?",
-               type    = "yesno")$res
+## Prompt the user to select a scoring scheme:
+scoreOpts <- list(new = "Post-2020 standard guessing correction",
+                  wo1 = "Work order option 1",
+                  wo2 = "Work order option 2",
+                  wo3 = "Work order option 3 (Custom scoring scheme)")
 
-if(customScheme == "yes") {
+scoreScheme <- dlgList(choices = scoreOpts,
+                       title   = "Which scoring rule would you like to use?")$res
+
+if(scoreScheme == scoreOpts["wo3"]) {
     ## Prompt the user to select the file path to the CSV file containing the
     ## lookup table describing the custom scoring scheme:
     tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
@@ -67,13 +72,18 @@ if(customScheme == "yes") {
     nOptions   <- as.numeric(
         dlgInput("How many response options are available for each question?")$res
     )
+    check <- length(nQuestions) == 0 | length(nOptions) == 0 
+    if(check)
+        wrappedError("I need to know how many questions this exam contains and the number of response options for each question before I can proceed.")
+}
+
+if(scoreScheme == scoreOpts["new"]) {
     passNorm   <- as.numeric(
         dlgInput("What norm would you like to use to define a passing grade?",
                  default = 0.55)$res
     )
-    check <- length(nQuestions) == 0 | length(nOptions) == 0 | length(passNorm) == 0
-    if(check)
-        wrappedError("I need to know how many questions this exam contains, the number of response options for each question, and the passing norm before I can proceed.")
+} else {
+    passNorm <- NULL
 }
 
 dlgMessage("Finally, I need you to tell me where you would like to save the results.")
