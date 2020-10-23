@@ -59,16 +59,16 @@ code, name of the online exam).
 
 You will be prompted to select between four different scoring options:
 
+1. The new standard guessing correction formula that will be adopted
+   university-wide in 2021
 1. The first scoring rule listed on the paper work order form
 1. The second scoring rule listed on the paper work order form
 1. A custom scoring scheme provided by the instructor as part of the third
    scoring option listed on the paper work order form
-1. The new standard guessing correction formula that will be adopted
-   university-wide in 2021
 
 When applying any of the first three scoring schemes, you will be prompted to
 indicate the number of questions on the exam and the number of response options
-(i.e., alternatives) for each question. If you select the final scoring scheme,
+(i.e., alternatives) for each question. If you select the first scoring scheme,
 you will also be prompted to indicate the passing norm to use in defining the
 minimum passing score. 
 
