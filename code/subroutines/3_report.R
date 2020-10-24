@@ -1,7 +1,7 @@
 ### Title:    Create an XLSX Output File
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-15
-### Modified: 2020-10-20
+### Modified: 2020-10-24
 
 
 ## Create an empty workbook and a new sheet therein:
@@ -25,24 +25,13 @@ blockData <- c("Exam Date", "Identifier", "Exam Name")
 cb        <- CellBlock(s1, 1, 1, 1, 3)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldLeftStyle)
 
-blockData <- matrix(c(sapply(campusMeta, "[[", x = "date"),
-                      sapply(onlineMeta, "[[", x = "date"),
-                      sapply(campusMeta, "[[", x = "id"),
-                      sapply(onlineMeta, "[[", x = "id"),
-                      sapply(campusMeta, "[[", x = "name"),
-                      sapply(onlineMeta, "[[", x = "name")
+## Populate contents of metadata block:
+blockData <- matrix(c(sapply(meta, "[[", x = "date"),
+                      sapply(meta, "[[", x = "id"),
+                      sapply(meta, "[[", x = "name")
                       ),
                     ncol = 3)
 
-## Populate contents of metadata block:
-blockData <- matrix(c(sapply(campusMeta, "[[", x = "date"),
-                      sapply(onlineMeta, "[[", x = "date"),
-                      sapply(campusMeta, "[[", x = "id"),
-                      sapply(onlineMeta, "[[", x = "id"),
-                      sapply(campusMeta, "[[", x = "name"),
-                      sapply(onlineMeta, "[[", x = "name")
-                      ),
-                    ncol = 3)
 metaRows  <- nrow(blockData) + 1
 cb        <- CellBlock(s1, 2, 1, metaRows, 3)
 CB.setMatrixData(cb, blockData, 1, 1, cellStyle = LeftStyle)

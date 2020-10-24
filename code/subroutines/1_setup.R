@@ -1,7 +1,7 @@
 ### Title:    Define the Parameters of a TiU Exam Combination Job
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-23
+### Modified: 2020-10-24
 
 
 ## Define legal file types for online results file:
@@ -27,22 +27,24 @@ campusCount <- as.numeric(
 
 ## Prompt the user to select the file path(s) to the XLSX file(s) containing the
 ## on-campus test results:
-if(campusCount == 1) {
-    msg <- "Please select the file that contains the on-campus test results."
-} else {
-    msg <- "Please select the file that contains the first set of on-campus test results."
+if(campusCount > 0) {
+    if(campusCount == 1) {
+        msg <- "Please select the file that contains the on-campus test results."
+    } else {
+        msg <- "Please select the file that contains the first set of on-campus test results."
+    }
+    
+    campusFile <- list()
+    for(i in 1 : campusCount) {
+        if(i == 2)
+            msg <- gsub("first", "next", msg)
+        
+        campusFile[[i]] <- dlgOpen(title = msg, filters = xlsxFilters)$res
+    }
+    
+    if(length(campusFile) == 0)
+        wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 }
-
-campusFile <- list()
-for(i in 1 : campusCount) {
-    if(i == 2)
-        msg <- gsub("first", "next", msg)
-
-    campusFile[[i]] <- dlgOpen(title = msg, filters = xlsxFilters)$res
-}
-
-if(length(campusFile) == 0)
-    wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 
 ## Prompt the user to select a scoring scheme:
 scoreOpts <- list(new = "Post-2020 standard guessing correction",
@@ -78,10 +80,25 @@ if(scoreScheme == scoreOpts["wo3"]) {
 }
 
 if(scoreScheme == scoreOpts["new"]) {
+    ## Prompt the user to define the passing norm to use when scoring the exam:
     passNorm   <- as.numeric(
         dlgInput("What norm would you like to use to define a passing grade?",
                  default = 0.55)$res
     )
+
+    if(campusCount == 0) {
+        ## Prompt the user to define the faculty to which the exam belongs:
+        dlgMessage("Without any on-campus results, I can't automatically detect the faculty to which this exam belongs. So, you'll need to specify the appropriate faculty.")
+        faculty <- tolower(
+            dlgList(choices = list("TSB",
+                                   "TSHD",
+                                   "TLS",
+                                   "TiSEM",
+                                   "TST",
+                                   "I don't know the faculty"),
+                    title   = "Select the faculty")$res
+        )
+    }
 } else {
     passNorm <- NULL
 }

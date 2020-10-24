@@ -1,7 +1,7 @@
 ### Title:    Combine and Process TiU Hybrid Exam Results
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-23
+### Modified: 2020-10-24
 
 
 ###--Process Online Gradebook Data-------------------------------------------###
@@ -36,17 +36,24 @@ onlineMeta <- lapply(tmp, "[", x = -1)
 
 ###--Process On-Campus Grade Data--------------------------------------------###
 
-tmp <- lapply(campusFile, processCampus)
-
-campusData  <- do.call(rbind, lapply(tmp, "[[", x = "data"))
-campusData0 <- do.call(rbind, lapply(tmp, "[[", x = "data0"))
-campusMeta  <- lapply(tmp, "[", x = -c(1, 2))
-
+if(campusCount > 0) {
+    tmp <- lapply(campusFile, processCampus)
+    
+    campusData  <- do.call(rbind, lapply(tmp, "[[", x = "data"))
+    campusData0 <- do.call(rbind, lapply(tmp, "[[", x = "data0"))
+    campusMeta  <- lapply(tmp, "[", x = -c(1, 2))
+    faculty     <- campusMeta[[1]]$faculty
+} else {
+    campusData <- campusMeta <- NULL
+}
 
 ###--Combine and Process Exam Grades-----------------------------------------###
 
 ## Stack the relevent columns from the online and on-campus files:
 pooled <- rbind(campusData, onlineData)
+
+## Merge the metadata lists:
+meta <- c(campusMeta, onlineMeta)
 
 ## Check for duplicate students:
 flag <- duplicated(pooled$snr)
@@ -68,9 +75,11 @@ if(any(flag)) {
 }
 
 ## Convert relevant columns to numeric:
-pooled$snr          <- as.numeric(pooled$snr)
-pooled$score        <- as.numeric(pooled$score)
-campusData0$result0 <- as.numeric(campusData0$result0)
+pooled$snr   <- as.numeric(pooled$snr)
+pooled$score <- as.numeric(pooled$score)
+
+if(campusCount > 0)
+    campusData0$result0 <- as.numeric(campusData0$result0)
 
 ## Score the exams:
 if(scoreScheme == scoreOpts["wo3"]) {
@@ -92,10 +101,7 @@ if(scoreScheme == scoreOpts["wo3"]) {
     
     ## Define the minimum grade to use:
     minGrade <- switch(scoringIndex,
-                       ifelse(campusMeta[[1]]$faculty == "tisem" &
-                              tisemMinGrade == 0,
-                              0,
-                              1),
+                       ifelse(faculty == "tisem" & tisemMinGrade == 0, 0, 1),
                        1,
                        0)
     
@@ -122,10 +128,12 @@ if(scoreScheme == scoreOpts["wo3"]) {
 ## Calculate the minimum passing score:
 cutoff <- with(scoreTable, Score[sum(Grade < 5.5) + 1])
 
-## Check the results:
-tmp   <- merge(pooled, campusData0, by = "snr")
-check <- all(with(tmp, result - result0) == 0)
-
-if(!check)
-    wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.",
-                   immediate. = TRUE)
+if(campusCount > 0) {
+    ## Check the results:
+    tmp   <- merge(pooled, campusData0, by = "snr")
+    check <- all(with(tmp, result - result0) == 0)
+    
+    if(!check)
+        wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.",
+                       immediate. = TRUE)
+}

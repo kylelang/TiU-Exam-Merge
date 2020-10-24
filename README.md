@@ -38,6 +38,10 @@ job. Multiple sets of online results are also supported, but the program assumes
 that these results will be represented as multiple columns in a single input
 file. So, you may only read in one file of online results.
 
+The program will also run with only online exam results. When prompted to
+specify the number of on-campus exam result files, input "0" to process only
+online exam results.
+
 The name of the column containing the online exam results should have a specific
 structure and format.
 
@@ -99,6 +103,20 @@ to the exam. Cells in this table that correspond to failing grades are filled
 with light red, and cells corresponding to passing grades are filled with light
 blue.
 
+The minimum score is determined by either the scoring rule used to score the
+exam or the faculty to which the exam belongs. All scoring rules other than the
+post-2020 standard guessing correction formula imply a fixed minimum grade. 
+
+1. First scoring rule listed on the paper work order form: Minimum grade = 1
+1. Second scoring rule listed on the paper work order form: Minimum grade = 0
+1. Custom scoring scheme provided by the instructor: Minimum grade defined by the scheme
+   
+When using the post-2020 standard guessing correction formula, TiSEM exams will
+be scored with a minimum grade of 0, and all other faculties will get a minimum
+grade of 1. The faculty is determined by parsing the on-campus results file, so
+the user will need to specify the faculty when processing only online exam
+results.
+
 ## Known Issues
 
 The program expects the XLSX file containing the on-campus exam results to be
@@ -125,3 +143,10 @@ intelligently by the program). This issue does not seem to occur when executing
 the script via any means other than interactively sourcing `code/runJob.sh` from
 within RStudio and may be resolved by future updates to either **svDialogs** or
 RStudio.
+
+The program will automatically append the ".xlsx" file extension to the output
+file when the user does not include the extension. When applying this
+functionality, however, duplicate filenames may not be detected, so the user may
+not be warned about overwriting existing files. For example, if the user
+specifies the output file name as: "myOuput", and a file exists with the name
+"myOutput.xlsx", the existing file will be overwritten without a warning.
