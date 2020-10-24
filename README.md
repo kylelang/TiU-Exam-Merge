@@ -109,13 +109,14 @@ post-2020 standard guessing correction formula imply a fixed minimum grade.
 
 1. First scoring rule listed on the paper work order form: Minimum grade = 1
 1. Second scoring rule listed on the paper work order form: Minimum grade = 0
-1. Custom scoring scheme provided by the instructor: Minimum grade defined by the scheme
+1. Custom scoring scheme provided by the instructor: Minimum grade defined by
+   the scheme
    
 When using the post-2020 standard guessing correction formula, TiSEM exams will
 be scored with a minimum grade of 0, and all other faculties will get a minimum
 grade of 1. The faculty is determined by parsing the on-campus results file, so
 the user will need to specify the faculty when processing only online exam
-results.
+results. If the user cannot specify the faculty, the minimum score is set to 1.
 
 ## Known Issues
 
