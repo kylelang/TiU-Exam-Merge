@@ -277,10 +277,6 @@ processCampus <- function(filePath) {
 
 ###--------------------------------------------------------------------------###
 
-                                        #index <- 1 #examCol
-                                        #data  <- onlineData
-                                        #names <- onlineNames
-
 ## Process the Canvas-based results file:
 processCanvas <- function(index, data, names, ...) {
     ## Extract metadata from online exam name:

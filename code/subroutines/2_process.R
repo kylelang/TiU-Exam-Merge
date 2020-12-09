@@ -4,9 +4,9 @@
 ### Modified: 2020-12-09
 
 
-###--Process Online Gradebook Data-------------------------------------------###
+###--Process Online Grade Data-----------------------------------------------###
 
-## Read in Online gradebook and column names:
+## Read in online grade data and column names:
 tmp         <- autoReadCsv(onlineFile, stringsAsFactors = FALSE)
 onlineData  <- tmp$data
 onlineNames <- as.character(
@@ -50,8 +50,6 @@ if(campus) {
     campusData0 <- do.call(rbind, lapply(tmp, "[[", x = "data0"))
     campusMeta  <- lapply(tmp, "[", x = -c(1, 2))
     faculty     <- campusMeta[[1]]$faculty
-} else {
-    campusData <- campusMeta <- NULL
 }
 
 ###--Combine and Process Exam Grades-----------------------------------------###
@@ -85,24 +83,14 @@ if(campus) {
         anr    <- c(rep(NA, nrow(campusData)), onlineData$anr)
         pooled <- data.frame(snr, anr, pooled)
     }
-
-    ## Convert relevant columns to numeric:
-                                        #pooled$snr   <- as.numeric(pooled$snr)
-                                        #pooled$score <- as.numeric(pooled$score)
     
     ## Merge the metadata lists:
     meta <- c(campusMeta, onlineMeta)
+    
 } else {# No on-campus results
     pooled <- onlineData
     meta   <- onlineMeta
 }
-
-## Merge the metadata lists:
-                                        #meta <- c(campusMeta, onlineMeta)
-
-
-if(campus)
-    campusData0$result0 <- as.numeric(campusData0$result0)
 
 ## Score the exams:
 if(scoreScheme == scoreOpts["wo3"]) {
