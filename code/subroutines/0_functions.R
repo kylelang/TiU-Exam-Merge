@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-23
+### Modified: 2020-12-09
 
 
 ## Score the exam according to one of the three functional scoring rules:
@@ -274,8 +274,8 @@ processCampus <- function(filePath) {
 
 ###--------------------------------------------------------------------------###
 
-## Process the online results file:
-processOnline <- function(index, data, names, ...) {
+## Process the Canvas-based results file:
+processCanvas <- function(index, data, names, ...) {
     ## Extract metadata from online exam name:
     examName <- names[index]
     tmp      <- str_locate_all(examName, c("/", "\\(Remotely Proctored|OPT-OUT"))
@@ -304,23 +304,49 @@ processOnline <- function(index, data, names, ...) {
     stuNames <- sapply(data$Student, parseName, USE.NAMES = FALSE)
 
     ## Extract the relevent columns:
-    outData <- data.frame(data[ , c("SIS.User.ID",
-                                         colnames(data)[index])
-                                    ],
-                         surname          = stuNames["name2", ],
-                         firstName        = stuNames["name1", ],
-                         version          = version,
-                         source           = "Online",
-                         stringsAsFactors = FALSE)
-    colnames(outData)[1 : 2] <- c("snr", "score")
-
-    outData$snr
-    outData$score
+    outData <- data.frame(snr              = data$SIS.User.ID,
+                          score            = data[ , index],
+                          surname          = stuNames["name2", ],
+                          firstName        = stuNames["name1", ],
+                          version          = version,
+                          source           = "Canvas",
+                          stringsAsFactors = FALSE)
+                                        #colnames(outData)[1 : 2] <- c("snr", "score")
     
     ## Remove any students without SNRs or scores:
     drops   <- with(outData, empty(snr, ...) | empty(score, ...))
     outData <- outData[!drops, ]
+    
+    list(data = outData, name = examName, date = examDate, id = courseCode)
+}
 
+###--------------------------------------------------------------------------###
+
+## Process the TestVision-based results file:
+processTestVision <- function(data) {
+    ## Extract metadata from online results file:
+    examName   <- data[1, "ToetsNaam"]
+    examDate   <- as.character(
+        as.Date(data[1, "AfnameBegindatum"], format = "%d-%m-%Y")
+    )
+    courseCode <- data[1, "MapNaamToets"]
+    version    <- ifelse(data$Proctoring == "Ja", "Proctored", "Not Proctored")
+    
+    ## Parse student names:
+    stuNames <- sapply(data$KandidaatWeergavenaam, parseName, USE.NAMES = FALSE)
+
+    ## Process ANRs:
+    anr <- as.numeric(gsub("u", "", data$KandidaatAanmeldnaam))
+    
+    ## Extract the relevent columns:
+    outData <- data.frame(anr              = anr,
+                          score            = data$ToetsScore,
+                          surname          = stuNames["name2", ],
+                          firstName        = stuNames["name1", ],
+                          version          = version,
+                          source           = "TestVision",
+                          stringsAsFactors = FALSE)
+    
     list(data = outData, name = examName, date = examDate, id = courseCode)
 }
 

@@ -1,15 +1,14 @@
 ### Title:    Combine and Process TiU Hybrid Exam Results
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-24
+### Modified: 2020-12-09
 
 
 ###--Process Online Gradebook Data-------------------------------------------###
 
 ## Read in Online gradebook and column names:
-tmp        <- autoReadCsv(onlineFile, stringsAsFactors = FALSE)
-onlineData <- tmp$data
-
+tmp         <- autoReadCsv(onlineFile, stringsAsFactors = FALSE)
+onlineData  <- tmp$data
 onlineNames <- as.character(
     read.table(file             = paste0(onlineFile),
                nrows            = 1,
@@ -17,22 +16,30 @@ onlineNames <- as.character(
                stringsAsFactors = FALSE)
 )
 
-## Drop metadata rows:
-onlineData <- onlineData[-c(1 : 2), ]
+## Check if the online exam was administered through Canvas or TestVision:
+canvas <- any(grepl("Points Possible|(read only)", onlineData[2, ]))
 
-## Find the exam column(s) in the Online gradebook:
-examCol <- findExam(data = onlineData, names = onlineNames)
-
-## Process the gradebook data:
-tmp <- lapply(X     = examCol,
-              FUN   = processOnline,
-              data  = onlineData,
-              names = onlineNames,
-              codes = missingScoreCodes)
-
-onlineData <- do.call(rbind, lapply(tmp, "[[", x = "data"))
-onlineMeta <- lapply(tmp, "[", x = -1)
-
+if(canvas) {
+    ## Drop metadata rows:
+    onlineData <- onlineData[-c(1 : 2), ]
+    
+    ## Find the exam column(s) in the Online gradebook:
+    examCol <- findExam(data = onlineData, names = onlineNames)
+    
+    ## Process the gradebook data:
+    tmp <- lapply(X     = examCol,
+                  FUN   = processCanvas,
+                  data  = onlineData,
+                  names = onlineNames,
+                  codes = missingScoreCodes)
+    
+    onlineData <- do.call(rbind, lapply(tmp, "[[", x = "data"))
+    onlineMeta <- lapply(tmp, "[", x = -1)
+} else {
+    tmp        <- processTestVision(onlineData)
+    onlineData <- tmp$data
+    onlineMeta <- list(tmp[-1])
+}
 
 ###--Process On-Campus Grade Data--------------------------------------------###
 
@@ -50,29 +57,36 @@ if(campusCount > 0) {
 ###--Combine and Process Exam Grades-----------------------------------------###
 
 ## Stack the relevent columns from the online and on-campus files:
-pooled <- rbind(campusData, onlineData)
+if(canvas) {
+    pooled <- rbind(campusData, onlineData)
+    
+    ## Check for duplicate students:
+    flag <- duplicated(pooled$snr)
+    
+    if(any(flag)) {
+        tmp           <- as.matrix(pooled[flag, c("snr", "surname", "firstName")])
+        colnames(tmp) <- c("SNR", "Surname", "Initials/First Name")
+        
+        ## Save the data on duplicate students:
+        dupFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
+        write.table(tmp, file = dupFile, sep = "\t", row.names = FALSE)
+        
+        msg <- paste0("It looks like ",
+                      sum(flag),
+                      " students are represented in multiple input files. I have saved their information in the file: ",
+                      dupFile,
+                      ". Please correct this issue before trying to rerun this job.")
+        wrappedError(msg)
+    }
+} else {
+    pooled <- rbind(campusData[ , -1], onlineData[ , -1])
+    snr    <- c(campusData$snr, rep(NA, nrow(onlineData)))
+    anr    <- c(rep(NA, nrow(campusData)), onlineData$anr)
+    pooled <- data.frame(snr, anr, pooled)
+}
 
 ## Merge the metadata lists:
 meta <- c(campusMeta, onlineMeta)
-
-## Check for duplicate students:
-flag <- duplicated(pooled$snr)
-
-if(any(flag)) {
-    tmp           <- as.matrix(pooled[flag, c("snr", "surname", "firstName")])
-    colnames(tmp) <- c("SNR", "Surname", "Initials/First Name")
-
-    ## Save the data on duplicate students:
-    dupFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
-    write.table(tmp, file = dupFile, sep = "\t", row.names = FALSE)
-
-    msg <- paste0("It looks like ",
-                  sum(flag),
-                  " students are represented in multiple input files. I have saved their information in the file: ",
-                  dupFile,
-                  ". Please correct this issue before trying to rerun this job.")
-    wrappedError(msg)
-}
 
 ## Convert relevant columns to numeric:
 pooled$snr   <- as.numeric(pooled$snr)
