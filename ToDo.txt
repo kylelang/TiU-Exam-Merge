@@ -1,7 +1,9 @@
 ### Title:    ToDo List for TiU-Exam-Merge Project
 ### Author:   Kyle M. Lang
 ### Created:  2020-12-09
-### Modified: 2020-12-09
+### Modified: 2020-12-10
 
 1. Allow multiple file selections for on-campus results files.
 -- DONE: 2020-12-09
+
+2. Update README to reflect changes made to accomodate TestVision results.
