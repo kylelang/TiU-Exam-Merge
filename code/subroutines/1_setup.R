@@ -21,30 +21,39 @@ xlsxFilters <- matrix(c("Office Open XML Spreadsheet", "*.xlsx;*.XLSX",
                    2, 2, byrow = TRUE)
 
 ## Ask the user how many on-campus test files they want to read in:
-campusCount <- as.numeric(
-    dlgInput("How many sets of on-campus results (i.e., unique files) do you need to process?")$res
-)
+                                        #campusCount <- as.numeric(
+                                        #    dlgInput("How many sets of on-campus results (i.e., unique files) do you need to process?")$res
+                                        #)
+
+## Ask the user if they need to process any on-campus exams:
+campus <- dlgMessage(message = "Do you have any on-campus results to process?",
+                     type    = "yesno")$res == "yes"
 
 ## Prompt the user to select the file path(s) to the XLSX file(s) containing the
 ## on-campus test results:
-if(campusCount > 0) {
-    if(campusCount == 1) {
-        msg <- "Please select the file that contains the on-campus test results."
-    } else {
-        msg <- "Please select the file that contains the first set of on-campus test results."
-    }
-    
-    campusFile <- list()
-    for(i in 1 : campusCount) {
-        if(i == 2)
-            msg <- gsub("first", "next", msg)
-        
-        campusFile[[i]] <- dlgOpen(title = msg, filters = xlsxFilters)$res
-    }
-    
+                                        #if(campusCount > 0) {
+                                        #    if(campusCount == 1) {
+                                        #        msg <- "Please select the file that contains the on-campus test results."
+                                        #    } else {
+                                        #        msg <- "Please select the file that contains the first set of on-campus test results."
+                                        #    }
+
+                                        #    campusFile <- list()
+                                        #    for(i in 1 : campusCount) {
+                                        #        if(i == 2)
+                                        #            msg <- gsub("first", "next", msg)
+                                        #        
+if(campus) {
+    campusFile <-
+        dlgOpen(title    = "Please select the file(s) that contains the on-campus test results.",
+                multiple = TRUE,
+                filters  = xlsxFilters)$res
+                                        #    }
+                                        #   
     if(length(campusFile) == 0)
         wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 }
+                                        #}
 
 ## Prompt the user to select a scoring scheme:
 scoreOpts <- list(new = "Post-2020 standard guessing correction",
@@ -86,7 +95,7 @@ if(scoreScheme == scoreOpts["new"]) {
                  default = 0.55)$res
     )
 
-    if(campusCount == 0) {
+    if(!campus) {
         ## Prompt the user to define the faculty to which the exam belongs:
         dlgMessage("Without any on-campus results, I can't automatically detect the faculty to which this exam belongs. So, you'll need to specify the appropriate faculty.")
         faculty <- tolower(

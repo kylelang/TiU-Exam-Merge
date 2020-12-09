@@ -31,6 +31,6 @@ while(!finished) {
     ## Generate an XLSX report:
     source("subroutines/3_report.R")
     
-    answer   <- dlgMessage("Do you want to process another exam?", "yesno")$res
-    finished <- answer == "no"
+    finished <-
+        dlgMessage("Do you want to process another exam?", "yesno")$res == "no"
 }

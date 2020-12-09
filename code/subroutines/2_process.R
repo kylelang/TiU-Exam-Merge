@@ -43,7 +43,7 @@ if(canvas) {
 
 ###--Process On-Campus Grade Data--------------------------------------------###
 
-if(campusCount > 0) {
+if(campus) {
     tmp <- lapply(campusFile, processCampus)
     
     campusData  <- do.call(rbind, lapply(tmp, "[[", x = "data"))
@@ -92,7 +92,7 @@ meta <- c(campusMeta, onlineMeta)
 pooled$snr   <- as.numeric(pooled$snr)
 pooled$score <- as.numeric(pooled$score)
 
-if(campusCount > 0)
+if(campus)
     campusData0$result0 <- as.numeric(campusData0$result0)
 
 ## Score the exams:
@@ -142,7 +142,7 @@ if(scoreScheme == scoreOpts["wo3"]) {
 ## Calculate the minimum passing score:
 cutoff <- with(scoreTable, Score[sum(Grade < 5.5) + 1])
 
-if(campusCount > 0) {
+if(campus) {
     ## Check the results:
     tmp   <- merge(pooled, campusData0, by = "snr")
     check <- all(with(tmp, result - result0) == 0)
