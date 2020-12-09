@@ -1,7 +1,7 @@
 ### Title:    Define the Parameters of a TiU Exam Combination Job
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-10-24
+### Modified: 2020-12-09
 
 
 ## Define legal file types for online results file:

@@ -57,40 +57,49 @@ if(campus) {
 ###--Combine and Process Exam Grades-----------------------------------------###
 
 ## Stack the relevent columns from the online and on-campus files:
-if(canvas) {
-    pooled <- rbind(campusData, onlineData)
-    
-    ## Check for duplicate students:
-    flag <- duplicated(pooled$snr)
-    
-    if(any(flag)) {
-        tmp           <- as.matrix(pooled[flag, c("snr", "surname", "firstName")])
-        colnames(tmp) <- c("SNR", "Surname", "Initials/First Name")
+if(campus) {
+    if(canvas) {
+        pooled <- rbind(campusData, onlineData)
         
-        ## Save the data on duplicate students:
-        dupFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
-        write.table(tmp, file = dupFile, sep = "\t", row.names = FALSE)
+        ## Check for duplicate students:
+        flag <- duplicated(pooled$snr)
         
-        msg <- paste0("It looks like ",
-                      sum(flag),
-                      " students are represented in multiple input files. I have saved their information in the file: ",
-                      dupFile,
-                      ". Please correct this issue before trying to rerun this job.")
-        wrappedError(msg)
+        if(any(flag)) {
+            tmp           <- as.matrix(pooled[flag, c("snr", "surname", "firstName")])
+            colnames(tmp) <- c("SNR", "Surname", "Initials/First Name")
+            
+            ## Save the data on duplicate students:
+            dupFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
+            write.table(tmp, file = dupFile, sep = "\t", row.names = FALSE)
+            
+            msg <- paste0("It looks like ",
+                          sum(flag),
+                          " students are represented in multiple input files. I have saved their information in the file: ",
+                          dupFile,
+                          ". Please correct this issue before trying to rerun this job.")
+            wrappedError(msg)
+        }
+    } else {# TestVision results
+        pooled <- rbind(campusData[ , -1], onlineData[ , -1])
+        snr    <- c(campusData$snr, rep(NA, nrow(onlineData)))
+        anr    <- c(rep(NA, nrow(campusData)), onlineData$anr)
+        pooled <- data.frame(snr, anr, pooled)
     }
-} else {
-    pooled <- rbind(campusData[ , -1], onlineData[ , -1])
-    snr    <- c(campusData$snr, rep(NA, nrow(onlineData)))
-    anr    <- c(rep(NA, nrow(campusData)), onlineData$anr)
-    pooled <- data.frame(snr, anr, pooled)
+
+    ## Convert relevant columns to numeric:
+                                        #pooled$snr   <- as.numeric(pooled$snr)
+                                        #pooled$score <- as.numeric(pooled$score)
+    
+    ## Merge the metadata lists:
+    meta <- c(campusMeta, onlineMeta)
+} else {# No on-campus results
+    pooled <- onlineData
+    meta   <- onlineMeta
 }
 
 ## Merge the metadata lists:
-meta <- c(campusMeta, onlineMeta)
+                                        #meta <- c(campusMeta, onlineMeta)
 
-## Convert relevant columns to numeric:
-pooled$snr   <- as.numeric(pooled$snr)
-pooled$score <- as.numeric(pooled$score)
 
 if(campus)
     campusData0$result0 <- as.numeric(campusData0$result0)

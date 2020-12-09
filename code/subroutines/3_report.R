@@ -82,7 +82,11 @@ CB.setRowData(cb, blockData, 1, rowStyle = LeftStyle)
 ### Student Results ###
 
 ## Populate column names for student results block:
-blockData <- c("Surname", "Initials/First Name", "SNR")
+blockData <- c("Surname", "Initials/First Name")
+
+if(canvas | campus)
+    blockData <- c(blockData, "SNR")
+
 if(!canvas)
     blockData <- c(blockData, "ANR")
 
@@ -101,7 +105,7 @@ cb        <- CellBlock(s1, metaRows + 13, firstCols + 3, 1, 2)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldLeftStyle)
 
 ## Populate contents of student results block:
-addDataFrame(pooled[c("surname", "firstName", "snr")],
+addDataFrame(pooled[c("surname", "firstName")],
              sheet     = s1,
              col.names = FALSE,
              row.names = FALSE,
@@ -110,13 +114,23 @@ addDataFrame(pooled[c("surname", "firstName", "snr")],
              colStyle  = list("3" = LeftStyle)
              )
 
-if(!canvas)
-    addDataFrame(pooled[c("anr")],
+if(canvas | campus)
+    addDataFrame(pooled["snr"],
                  sheet     = s1,
                  col.names = FALSE,
                  row.names = FALSE,
                  startRow  = metaRows + 14,
-                 startCol  = 4,
+                 startCol  = 3,
+                 colStyle  = list("3" = LeftStyle)
+                 )
+
+if(!canvas)
+    addDataFrame(pooled["anr"],
+                 sheet     = s1,
+                 col.names = FALSE,
+                 row.names = FALSE,
+                 startRow  = metaRows + 14,
+                 startCol  = ifelse(campus, 4, 3),
                  colStyle  = list("3" = LeftStyle)
                  )
 

@@ -251,19 +251,22 @@ processCampus <- function(filePath) {
 
     ## Extract the relevent columns:
     outData <- data.frame(
-        grades[ , c("S Nummer", "Score", "Versie")],
+        snr       = as.numeric(grades[ , "S Nummer"]),
+        score     = as.numeric(grades$Score),
+        version   = grades$Versie,
         surname   = stuNames["name2", ],
         firstName = stuNames["name1", ],
-        source    = "Campus")
-    colnames(outData)[1 : 3] <- c("snr", "score", "version")
-
+        source    = "Campus"
+    )
+    
     ## Remove any students without SNRs or scores:
     outData <- outData[with(outData, !is.na(snr) & !is.na(score)), ]
-
+    
     ## Extract SA-computed result for testing purposes:
-    outData0           <- grades[ , c("S Nummer", "Resultaat")]
-    colnames(outData0) <- c("snr", "result0")
-
+    outData0 <- data.frame(snr     = as.numeric(grades[ , "S Nummer"]),
+                           result0 = as.numeric(grades$Resultaat)
+                           )
+    
     list(data    = outData,
          data0   = outData0,
          faculty = faculty,
@@ -274,16 +277,24 @@ processCampus <- function(filePath) {
 
 ###--------------------------------------------------------------------------###
 
+                                        #index <- 1 #examCol
+                                        #data  <- onlineData
+                                        #names <- onlineNames
+
 ## Process the Canvas-based results file:
 processCanvas <- function(index, data, names, ...) {
     ## Extract metadata from online exam name:
     examName <- names[index]
-    tmp      <- str_locate_all(examName, c("/", "\\(Remotely Proctored|OPT-OUT"))
-
+    tmp      <- str_locate_all(examName,
+                               c("/", "\\(Remotely Proctored|OPT-OUT")
+                               )
+    
     examDate <- tryCatch(substr(examName, 1, tmp[[1]][1, 1] - 1),
-                          error = function(e) "Not Recovered")
-
-    courseCode <- tryCatch(substr(examName, tmp[[1]][1, 1] + 1, tmp[[1]][2, 2] - 1),
+                         error = function(e) "Not Recovered")
+    
+    courseCode <- tryCatch(substr(examName,
+                                  tmp[[1]][1, 1] + 1,
+                                  tmp[[1]][2, 2] - 1),
                            error = function(e) "Not Recovered")
 
     if(grepl("proctored", examName, ignore.case = TRUE))
@@ -299,19 +310,17 @@ processCanvas <- function(index, data, names, ...) {
     )
     if(class(tmp) != "try-error") examName <- str_trim(tmp)
 
-
     ## Parse student names:
     stuNames <- sapply(data$Student, parseName, USE.NAMES = FALSE)
 
     ## Extract the relevent columns:
-    outData <- data.frame(snr              = data$SIS.User.ID,
-                          score            = data[ , index],
+    outData <- data.frame(snr              = as.numeric(data$SIS.User.ID),
+                          score            = as.numeric(data[ , index]),
                           surname          = stuNames["name2", ],
                           firstName        = stuNames["name1", ],
                           version          = version,
                           source           = "Canvas",
                           stringsAsFactors = FALSE)
-                                        #colnames(outData)[1 : 2] <- c("snr", "score")
     
     ## Remove any students without SNRs or scores:
     drops   <- with(outData, empty(snr, ...) | empty(score, ...))
