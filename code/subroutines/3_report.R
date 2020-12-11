@@ -180,6 +180,53 @@ CB.setMatrixData(cb,
 
 ###--------------------------------------------------------------------------###
 
+## Create a new sheet to contain the results of the score comparisons:
+s3 <- createSheet(wb = wb1, sheetName = "Irregularity Checks")
+
+## Add column headings:
+blockData <- c("Faculty",
+               "Exam Name",
+               "Course Code",
+               "Exam Date",
+               paste(c("Campus", "Online"),
+                     rep(c("N", "Mean Grade", "Grades >= 6", "Grades >= 8"),
+                         each = 2)
+                     ),
+               paste("Difference in Mean Scores:",
+                     c("t-statistic", "df", "p-value", "Cohen's d")
+                     ),
+               paste("Difference in Proportion of Scores >= 6:",
+                     c("chi-squared statistic", "df", "p-value", "Cohen's h")
+                     ),
+               paste("Difference in Proportion of Scores >= 8:",
+                     c("chi-squared statistic", "df", "p-value", "Cohen's h")
+                     )
+               )
+cb <- CellBlock(s3, 1, 1, 1, length(blockData))
+CB.setRowData(cb, blockData, rowIndex = 1, rowStyle = BoldLeftStyle)
+
+## Add comparison data:
+tmp       <- meta[[length(meta)]]
+blockData <- c(toupper(meta[[1]]$faculty),
+               tmp$name,
+               tmp$id,
+               tmp$date,
+               with(scoreComps,
+                    c(n[c("campus", "online")],
+                      mean[c("campus", "online")],
+                      count6[c("campus", "online")],
+                      count8[c("campus", "online")],
+                      with(tOut, c(statistic, parameter, p.value)),
+                      d,
+                      with(chiOut6, c(statistic, parameter, p.value)),
+                      h6,
+                      with(chiOut8, c(statistic, parameter, p.value)),
+                      h8)
+                    )
+               )
+cb <- CellBlock(s3, 2, 1, 2, length(blockData))
+CB.setRowData(cb, blockData, rowIndex = 1)
+
 ## Set column widths:
 setColumnWidth(sheet = s1, colIndex = 1, colWidth = 14)
 setColumnWidth(sheet = s1, colIndex = 2, colWidth = 18)

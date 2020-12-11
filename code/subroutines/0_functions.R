@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-09
+### Modified: 2020-12-11
 
 
 ## Score the exam according to one of the three functional scoring rules:
@@ -251,8 +251,8 @@ processCampus <- function(filePath) {
 
     ## Extract the relevent columns:
     outData <- data.frame(
-        snr       = as.numeric(grades[ , "S Nummer"]),
-        score     = as.numeric(grades$Score),
+        snr       = suppressWarnings(as.numeric(grades[ , "S Nummer"])),
+        score     = suppressWarnings(as.numeric(grades$Score)),
         version   = grades$Versie,
         surname   = stuNames["name2", ],
         firstName = stuNames["name1", ],
@@ -263,9 +263,10 @@ processCampus <- function(filePath) {
     outData <- outData[with(outData, !is.na(snr) & !is.na(score)), ]
     
     ## Extract SA-computed result for testing purposes:
-    outData0 <- data.frame(snr     = as.numeric(grades[ , "S Nummer"]),
-                           result0 = as.numeric(grades$Resultaat)
-                           )
+    outData0 <- data.frame(
+        snr     = suppressWarnings(as.numeric(grades[ , "S Nummer"])),
+        result0 = suppressWarnings(as.numeric(grades$Resultaat))
+    )
     
     list(data    = outData,
          data0   = outData0,
@@ -310,13 +311,15 @@ processCanvas <- function(index, data, names, ...) {
     stuNames <- sapply(data$Student, parseName, USE.NAMES = FALSE)
 
     ## Extract the relevent columns:
-    outData <- data.frame(snr              = as.numeric(data$SIS.User.ID),
-                          score            = as.numeric(data[ , index]),
-                          surname          = stuNames["name2", ],
-                          firstName        = stuNames["name1", ],
-                          version          = version,
-                          source           = "Canvas",
-                          stringsAsFactors = FALSE)
+    outData <- data.frame(
+        snr              = suppressWarnings(as.numeric(data$SIS.User.ID)),
+        score            = suppressWarnings(as.numeric(data[ , index])),
+        surname          = stuNames["name2", ],
+        firstName        = stuNames["name1", ],
+        version          = version,
+        source           = "Canvas",
+        stringsAsFactors = FALSE
+    )
     
     ## Remove any students without SNRs or scores:
     drops   <- with(outData, empty(snr, ...) | empty(score, ...))
@@ -360,3 +363,63 @@ processTestVision <- function(data) {
 ## Find different flavors of empty cell:
 empty <- function(x, codes = NULL)
     is.na(x) | length(x) == 0 | x == "" | x %in% codes
+
+###--------------------------------------------------------------------------###
+
+## Compute Cohen's H effect size measure:
+cohenH <- function(x) as.numeric(2 * abs(diff(asin(sqrt(x)))))
+
+###--------------------------------------------------------------------------###
+
+## Compute Cohen's D effect size measure:
+cohenD <- function(x, group) {
+    n  <- table(group)
+    m  <- tapply(x, group, mean)
+    s2 <- tapply(x, group, var)
+    
+    as.numeric(
+        abs(diff(m)) /
+        sqrt(((n[1] - 1) * s2[1] + (n[2] - 1) * s2[2]) / (sum(n) - 2))
+    )
+}
+
+###--------------------------------------------------------------------------###
+
+## Compare online and on-campus exam scores to check for irregularities:
+compareScores <- function(data) {
+    ## Define the grouping variable:
+    groups <- tolower(data$source)
+    groups <- gsub("canvas|testvision", "online", groups)
+
+    ## Store groups sizes:
+    n <- table(groups)
+    
+    ## How many students passed each exam?
+    count6 <- tapply(data$result, groups, function(x) sum(x >= 5.5))
+                                        #prop6  <- count6 / n
+    
+    ## How many students passed with a score of 8 or higher?
+    count8 <- tapply(data$result, groups, function(x) sum(x >= 7.75))
+                                        #prop8  <- count8 / n
+    
+    ## Compare mean passing rates:
+    tOut <- t.test(data$result ~ groups, var.equal = FALSE)
+    
+    ## Compare proportions of passing students:
+    chiOut6 <- prop.test(count6, n)
+    
+    ## Compare proportions of Cum Laude students:
+    chiOut8 <- prop.test(count8, n)
+
+    list(n       = n,
+         mean    = tapply(data$result, groups, mean),
+         count6  = count6,
+         count8  = count8,
+         tOut    = tOut,
+         chiOut6 = chiOut6,
+         chiOut8 = chiOut8,
+         d       = cohenD(data$result, groups),
+         h6      = cohenH(count6 / n),
+         h8      = cohenH(count8 / n)
+         )
+}

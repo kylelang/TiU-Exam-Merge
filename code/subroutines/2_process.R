@@ -1,7 +1,7 @@
 ### Title:    Combine and Process TiU Hybrid Exam Results
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-09
+### Modified: 2020-12-11
 
 
 ###--Process Online Grade Data-----------------------------------------------###
@@ -147,4 +147,7 @@ if(campus) {
     if(!check)
         wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.",
                        immediate. = TRUE)
+
+    ## Compare the online and on-campus results to check for irregularities:
+    scoreComps <- compareScores(pooled)
 }

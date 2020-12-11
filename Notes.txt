@@ -8,3 +8,9 @@
 
 2. Do we want/need the ability to process multiple Canvas/TestVision exams?
 -- 2020-12-11: Gido is checking
+
+3. What do we use as the "Course Name", "Course Code", and "Exam Date" entries
+   in the irregularity checks output? We have a (potentially) different version
+   of each.
+
+4. How do we want to format the output of the irregularity checks? Two-row heading?
