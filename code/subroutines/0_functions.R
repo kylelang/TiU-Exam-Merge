@@ -389,19 +389,21 @@ cohenD <- function(x, group) {
 compareScores <- function(data) {
     ## Define the grouping variable:
     groups <- tolower(data$source)
-    groups <- gsub("canvas|testvision", "online", groups)
+    groups <- factor(gsub("canvas|testvision", "online", groups),
+                     levels = c("online", "campus")
+                     )
 
     ## Store groups sizes:
     n <- table(groups)
     
     ## How many students passed each exam?
-    tmp  <- data$result >= 5.5
+    tmp  <- factor(data$result >= 5.5, levels = c("FALSE", "TRUE"))
     tab6 <- table(groups, pass = tmp)
     or6  <- (tab6["online", "TRUE"] / tab6["online", "FALSE"]) /
         (tab6["campus", "TRUE"] / tab6["campus", "FALSE"])
     
     ## How many students passed with a score of 8 or higher?
-    tmp  <- data$result >= 7.75
+    tmp  <- factor(data$result >= 7.75, levels = c("FALSE", "TRUE"))
     tab8 <- table(groups, pass = tmp)
     or8  <- (tab8["online", "TRUE"] / tab8["online", "FALSE"]) /
         (tab8["campus", "TRUE"] / tab8["campus", "FALSE"])
