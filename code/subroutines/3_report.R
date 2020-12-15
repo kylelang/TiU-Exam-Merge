@@ -1,7 +1,7 @@
 ### Title:    Create an XLSX Output File
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-15
-### Modified: 2020-12-09
+### Modified: 2020-12-15
 
 
 ## Create an empty workbook and a new sheet therein:
@@ -148,6 +148,12 @@ addDataFrame(pooled[c("source", "version")],
              startRow  = metaRows + 14,
              startCol  = firstCols + 3)
 
+## Set column widths:
+setColumnWidth(sheet = s1, colIndex = 1, colWidth = 14)
+setColumnWidth(sheet = s1, colIndex = 2, colWidth = 18)
+setColumnWidth(sheet = s1, colIndex = 3, colWidth = 12)
+setColumnWidth(sheet = s1, colIndex = 4 : 8, colWidth = 10)
+
 ###--------------------------------------------------------------------------###
 
 ## Add another sheet to hold the scoring table:
@@ -180,58 +186,114 @@ CB.setMatrixData(cb,
 
 ###--------------------------------------------------------------------------###
 
-## Create a new sheet to contain the results of the score comparisons:
-s3 <- createSheet(wb = wb1, sheetName = "Irregularity Checks")
-
-## Add column headings:
-blockData <- c("Faculty",
-               "Exam Name",
-               "Course Code",
-               "Exam Date",
-               paste(c("Campus", "Online"),
-                     rep(c("N", "Mean Grade", "Grades >= 6", "Grades >= 8"),
-                         each = 2)
-                     ),
-               paste("Difference in Mean Scores:",
-                     c("t-statistic", "df", "p-value", "Cohen's d")
-                     ),
-               paste("Difference in Proportion of Scores >= 6:",
-                     c("chi-squared statistic", "df", "p-value", "Cohen's h")
-                     ),
-               paste("Difference in Proportion of Scores >= 8:",
-                     c("chi-squared statistic", "df", "p-value", "Cohen's h")
-                     )
-               )
-cb <- CellBlock(s3, 1, 1, 1, length(blockData))
-CB.setRowData(cb, blockData, rowIndex = 1, rowStyle = BoldLeftStyle)
-
-## Add comparison data:
-tmp       <- meta[[length(meta)]]
-blockData <- c(toupper(meta[[1]]$faculty),
-               tmp$name,
-               tmp$id,
-               tmp$date,
-               with(scoreComps,
-                    c(n[c("campus", "online")],
-                      mean[c("campus", "online")],
-                      count6[c("campus", "online")],
-                      count8[c("campus", "online")],
-                      with(tOut, c(statistic, parameter, p.value)),
-                      d,
-                      with(chiOut6, c(statistic, parameter, p.value)),
-                      h6,
-                      with(chiOut8, c(statistic, parameter, p.value)),
-                      h8)
+if(campus) {
+    ## Create a new sheet to contain the results of the score comparisons:
+    s3 <- createSheet(wb = wb1, sheetName = "Irregularity Checks")
+    
+    ## Add column headings:
+    blockData <-
+        c("Faculty",
+          "Exam Name",
+          "Course Code",
+          "Exam Date",
+          paste(c("Campus", "Online"),
+                rep(c("N", "Mean Grade", "Grades >= 6", "Grades >= 8"),
+                    each = 2)
+                ),
+          paste("Difference in Mean Scores:",
+                c("t-statistic", "df", "p-value", "Cohen's d")
+                ),
+          paste("Difference in Proportion of Scores >= 6:",
+                c("online/campus odds-ratio", "chi-squared statistic", "p-value", "Cohen's h")                ),
+          paste("Difference in Proportion of Scores >= 8:",
+                c("online/campus odds-ratio", "chi-squared statistic", "p-value", "Cohen's h")
+                )
+          )
+    cb <- CellBlock(s3, 1, 1, 1, length(blockData))
+    CB.setRowData(cb, blockData, rowIndex = 1, rowStyle = BoldLeftStyle)
+    
+    ## Add comparison data:
+    tmp <- meta[[length(meta)]]
+    tmp <- c(toupper(meta[[1]]$faculty),
+             tmp$name,
+             tmp$id,
+             tmp$date,
+             with(scoreComps,
+                  c(n[c("campus", "online")],
+                    round(mean[c("campus", "online")], 2),
+                    count6[c("campus", "online")],
+                    count8[c("campus", "online")],
+                    with(tOut, c(round(statistic, 2),
+                                 round(parameter, 2),
+                                 round(p.value, 3)
+                                 )
+                         ),
+                    round(d, 3)
                     )
-               )
-cb <- CellBlock(s3, 2, 1, 2, length(blockData))
-CB.setRowData(cb, blockData, rowIndex = 1)
+                  )
+             )
+    
+    check <- scoreComps$tOut$p.value < 0.001
+    if(check) tmp[15] <- "<0.001"
+    
+    ## Data involving counts of passing students:
+    check <- class(scoreComps$test6) == "htest"
+    if(check) {
+        tmp2 <- with(scoreComps,
+                     c(round(or6, 2),
+                       with(test6,
+                            c(ifelse(grepl("Fisher's", method),
+                                     "Not Applicable",
+                                     round(statistic, 2)
+                                     ),
+                              round(p.value, 3)
+                              )
+                            ),
+                       round(h6, 3)
+                       )
+                     )
+    } else {
+        tmp2 <- rep("Not Applicable", 4)
+    }
+    
+    check <- check && scoreComps$test6$p.value < 0.001
+    if(check) tmp2[3] <- "<0.001"
 
-## Set column widths:
-setColumnWidth(sheet = s1, colIndex = 1, colWidth = 14)
-setColumnWidth(sheet = s1, colIndex = 2, colWidth = 18)
-setColumnWidth(sheet = s1, colIndex = 3, colWidth = 12)
-setColumnWidth(sheet = s1, colIndex = 4 : 8, colWidth = 10)
+    if(tmp2[1] == "Inf") tmp2[1] <- "Undefined"
+
+    tmp <- c(tmp, tmp2)
+    
+    ## Data involving counts of students score 8 or higher:
+    check <- class(scoreComps$test8) == "htest"
+    if(check) {
+        tmp2 <- with(scoreComps,
+                     c(round(or8, 2),
+                       with(test8,
+                            c(ifelse(grepl("Fisher's", method),
+                                     "Not Applicable",
+                                     round(statistic, 2)
+                                     ),
+                              round(p.value, 3)
+                              )
+                            ),
+                       round(h8, 3)
+                       )
+                     )
+    } else {
+        tmp2 <- rep("Not Applicable", 4)
+    }
+    
+    check <- check && scoreComps$test8$p.value < 0.001
+    if(check) tmp2[3] <- "<0.001"
+    
+    if(tmp2[1] == "Inf") tmp2[1] <- "Undefined"
+    
+    blockData <- c(tmp, tmp2)
+    cb        <- CellBlock(s3, 2, 1, 2, length(blockData))
+    CB.setRowData(cb, blockData, rowIndex = 1)
+}# CLOSE if(campus)
+
+###--------------------------------------------------------------------------###
 
 ## Save the final workbook to disk:
 saveWorkbook(wb1, outFile)

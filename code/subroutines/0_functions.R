@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-11
+### Modified: 2020-12-15
 
 
 ## Score the exam according to one of the three functional scoring rules:
@@ -395,31 +395,51 @@ compareScores <- function(data) {
     n <- table(groups)
     
     ## How many students passed each exam?
-    count6 <- tapply(data$result, groups, function(x) sum(x >= 5.5))
-                                        #prop6  <- count6 / n
+    tmp  <- data$result >= 5.5
+    tab6 <- table(groups, pass = tmp)
+    or6  <- (tab6["online", "TRUE"] / tab6["online", "FALSE"]) /
+        (tab6["campus", "TRUE"] / tab6["campus", "FALSE"])
     
     ## How many students passed with a score of 8 or higher?
-    count8 <- tapply(data$result, groups, function(x) sum(x >= 7.75))
-                                        #prop8  <- count8 / n
+    tmp  <- data$result >= 7.75
+    tab8 <- table(groups, pass = tmp)
+    or8  <- (tab8["online", "TRUE"] / tab8["online", "FALSE"]) /
+        (tab8["campus", "TRUE"] / tab8["campus", "FALSE"])
     
     ## Compare mean passing rates:
     tOut <- t.test(data$result ~ groups, var.equal = FALSE)
     
     ## Compare proportions of passing students:
-    chiOut6 <- prop.test(count6, n)
-    
-    ## Compare proportions of Cum Laude students:
-    chiOut8 <- prop.test(count8, n)
+    if(sum(tab6[ , "TRUE"]) > 0) {
+        if(all(tab6 >= 5))
+            test6 <- prop.test(tab6, correct = FALSE)
+        else
+            test6 <- fisher.test(tab6)
+    } else {
+        test6 <- NA
+    }
 
-    list(n       = n,
-         mean    = tapply(data$result, groups, mean),
-         count6  = count6,
-         count8  = count8,
-         tOut    = tOut,
-         chiOut6 = chiOut6,
-         chiOut8 = chiOut8,
-         d       = cohenD(data$result, groups),
-         h6      = cohenH(count6 / n),
-         h8      = cohenH(count8 / n)
+    ## Compare proportions of Cum Laude students:
+    if(sum(tab8[ , "TRUE"]) > 0) {
+        if(all(tab8 >= 5))
+            test8 <- prop.test(tab8, correct = FALSE)
+        else
+            test8 <- fisher.test(tab8)
+    } else {
+        test8 <- NA
+    }
+    
+    list(n      = n,
+         mean   = tapply(data$result, groups, mean),
+         count6 = tab6[ , "TRUE"],
+         count8 = tab8[ , "TRUE"],
+         or6    = or6,
+         or8    = or8,
+         tOut   = tOut,
+         test6  = test6,
+         test8  = test8,
+         d      = cohenD(data$result, groups),
+         h6     = cohenH(tab6[ , "TRUE"] / n),
+         h8     = cohenH(tab8[ , "TRUE"] / n)
          )
 }
