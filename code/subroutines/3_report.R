@@ -1,7 +1,7 @@
 ### Title:    Create an XLSX Output File
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-15
-### Modified: 2020-12-15
+### Modified: 2020-12-22
 
 
 ## Create an empty workbook and a new sheet therein:
@@ -74,7 +74,7 @@ cb        <- CellBlock(s1, metaRows + 10, 1, 1, 1)
 CB.setRowData(cb, blockData, 1, rowStyle = BoldLeftStyle)
 
 ## Populate contents of warning message:
-blockData <- "Canvas cannot output special characters. Therefore, some student names might be displayed improperly."
+blockData <- "Neither Canvas nor TestVision can output special characters. Therefore, some student names might be displayed improperly."
 cb        <- CellBlock(s1, metaRows + 10, 2, 1, 1)
 CB.setRowData(cb, blockData, 1, rowStyle = LeftStyle)
 
@@ -186,31 +186,80 @@ CB.setMatrixData(cb,
 
 ###--------------------------------------------------------------------------###
 
+## Save the final workbook to disk:
+saveWorkbook(wb1, outFile)
+
+###--------------------------------------------------------------------------###
+
 if(campus) {
-    ## Create a new sheet to contain the results of the score comparisons:
-    s3 <- createSheet(wb = wb1, sheetName = "Irregularity Checks")
+    ## Create a new workbook and sheet to contain the results of the score
+    ## comparisons:
+    wb1 <- createWorkbook()
+    s1  <- createSheet(wb = wb1, sheetName = "Irregularity Checks")
     
-    ## Add column headings:
+    ## Define some useful formats:
+    BoldLeftStyle <- CellStyle(wb1) +
+        Font(wb1, isBold = TRUE) +
+        Alignment(horizontal = "ALIGN_LEFT")
+    BoldCenterStyle <- CellStyle(wb1) +
+        Font(wb1, isBold = TRUE) +
+        Alignment(horizontal = "ALIGN_CENTER")
+    
+    ## Add column super-headings:
+    blockData <- c(
+        rep("", 4),
+        "Sample Size",
+        "",
+        "Mean Grade",
+        "",
+        "Grades >= 6",
+        "",
+        "Grades >= 8",
+        "",
+        "Difference in Mean Grades",
+        rep("", 3),
+        "Difference in Proportion of Grades >= 6",
+        rep("", 3),
+        "Difference in Proportion of Grades >= 8",
+        rep("", 3)
+    )
+    cb <- CellBlock(s1, 1, 1, 1, length(blockData))
+    CB.setRowData(cb, blockData, rowIndex = 1, rowStyle = BoldCenterStyle)
+
+    ## Merge cells in super-headings:
+    addMergedRegion(s1, 1, 1, 5, 6)
+    addMergedRegion(s1, 1, 1, 7, 8)
+    addMergedRegion(s1, 1, 1, 9, 10)
+    addMergedRegion(s1, 1, 1, 11, 12)
+    addMergedRegion(s1, 1, 1, 13, 16)
+    addMergedRegion(s1, 1, 1, 17, 20)
+    addMergedRegion(s1, 1, 1, 21, 24)
+  
+    ## Add column sub-headings:
     blockData <-
         c("Faculty",
           "Exam Name",
           "Course Code",
           "Exam Date",
-          paste(c("Campus", "Online"),
-                rep(c("N", "Mean Grade", "Grades >= 6", "Grades >= 8"),
-                    each = 2)
-                ),
-          paste("Difference in Mean Scores:",
-                c("t-statistic", "df", "p-value", "Cohen's d")
-                ),
-          paste("Difference in Proportion of Scores >= 6:",
-                c("online/campus odds-ratio", "chi-squared statistic", "p-value", "Cohen's h")                ),
-          paste("Difference in Proportion of Scores >= 8:",
-                c("online/campus odds-ratio", "chi-squared statistic", "p-value", "Cohen's h")
-                )
+          rep(c("Campus", "Online"), 4),
+          "T-Statistic",
+          "DF",
+          "P-Value",
+          "Cohen's d",
+          "Online:Campus Odds-Ratio",
+          "Chi-Squared Statistic",
+          "P-Value",
+          "Cohen's h",
+          "Online:Campus Odds-Ratio",
+          "Chi-Squared Statistic",
+          "P-Value",
+          "Cohen's h"
           )
-    cb <- CellBlock(s3, 1, 1, 1, length(blockData))
+    cb <- CellBlock(s1, 2, 1, 1, length(blockData))
     CB.setRowData(cb, blockData, rowIndex = 1, rowStyle = BoldLeftStyle)
+
+    ## Resize columns that won't be adjusted later to fit their headings:
+    autoSizeColumn(s1, 1 : 2)
     
     ## Add comparison data:
     tmp <- meta[[length(meta)]]
@@ -289,11 +338,13 @@ if(campus) {
     if(tmp2[1] == "Inf") tmp2[1] <- "Undefined"
     
     blockData <- c(tmp, tmp2)
-    cb        <- CellBlock(s3, 2, 1, 2, length(blockData))
+    cb        <- CellBlock(s1, 3, 1, 1, length(blockData))
     CB.setRowData(cb, blockData, rowIndex = 1)
+
+    ## Resize the columns to fit the new data (except for the exam name):
+    autoSizeColumn(s1, 3 : 24)
+    
+    ## Save the final workbook to disk:
+    saveWorkbook(wb1, checksFile)
+    
 }# CLOSE if(campus)
-
-###--------------------------------------------------------------------------###
-
-## Save the final workbook to disk:
-saveWorkbook(wb1, outFile)

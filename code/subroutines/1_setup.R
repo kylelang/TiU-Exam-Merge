@@ -1,7 +1,7 @@
 ### Title:    Define the Parameters of a TiU Exam Combination Job
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-09
+### Modified: 2020-12-22
 
 
 ## Define legal file types for online results file:
@@ -93,10 +93,35 @@ if(scoreScheme == scoreOpts["new"]) {
     passNorm <- NULL
 }
 
+## Ask the user to define the ouput file(s):
 dlgMessage("Finally, I need you to tell me where you would like to save the results.")
 
-outFile <- dlgSave(title = "Where would you like to save the results?")$res
+windows <- Sys.info()["sysname"] == "Windows"
+outFile <- getOutputFile(windows, maxNameLength)
 
-## Add a file extension to the output file, if necessary:
-if(!grepl("\\.xlsx$|\\.XLSX$", outFile))
-    outFile <- paste(outFile, "xlsx", sep = ".")
+## Define an output file for the irregularity checks:
+if(campus) {
+    tmp        <- strsplit(outFile, ".xlsx", fixed = TRUE)[[1]]
+    checksFile <- paste(tmp, "irregularity_checks.xlsx", sep = "-")
+
+    ## Check for file length issues on Windows:
+    fileLen <- nchar(checksFile)
+    if(windows & fileLen > maxNameLength) {
+        newFile <- dlgMessage(
+            paste(
+                "The filepath that I've automatically generated for your irregularity checks:\n",
+                checksFile,
+                "\nis",
+                fileLen,
+                "characters long. Windows may not be able to handle filepaths with more than",
+                maxNameLength,
+                "characters. Would you like to select a different location in which to save the results of your irregularity checks?"
+            ),
+            "yesno"
+        )$res
+
+        ## Ask the user to define a new file, if necessary:
+        if(newFile == "yes")
+            checksFile <- getOutputFile(windows, maxNameLength)
+    }
+}

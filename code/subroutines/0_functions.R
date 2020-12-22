@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-15
+### Modified: 2020-12-22
 
 
 ## Score the exam according to one of the three functional scoring rules:
@@ -444,4 +444,36 @@ compareScores <- function(data) {
          h6     = cohenH(tab6[ , "TRUE"] / n),
          h8     = cohenH(tab8[ , "TRUE"] / n)
          )
+}
+
+###--------------------------------------------------------------------------###
+
+getOutputFile <- function(windows, maxLength) {
+    newFile <- "yes"
+    while(newFile == "yes") {
+        out <- dlgSave(title = "Where would you like to save the results?")$res
+        
+        ## Add a file extension to the output file, if necessary:
+        if(!grepl("\\.xlsx$", out, ignore.case = TRUE))
+            out <- paste(out, "xlsx", sep = ".")
+        
+        fileLen <- nchar(out)
+        if(windows & fileLen > maxLength) {
+            newFile <- dlgMessage(
+                paste(
+                    "The filepath that you've specified:\n",
+                    out,
+                    "\nis",
+                    fileLen,
+                    "characters long. Windows may not be able to handle filepaths with more than",
+                    maxLength,
+                    "characters. Would you like to select a different location?"
+                ),
+                "yesno"
+            )$res
+        } else {
+            newFile <- "no"
+        }
+    }# CLOSE while(newFile == "yes")
+    out
 }

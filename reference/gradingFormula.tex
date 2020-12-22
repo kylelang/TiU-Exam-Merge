@@ -1,0 +1,46 @@
+%%% Title:    Formula for Post-2020 Standard Scoring Rule
+%%% Author:   Kyle M. Lang
+%%% Created:  2020-12-17
+%%% Modified: 2020-12-17
+
+\documentclass[12pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{datetime2}
+
+\title{Formula for Post-2020 Standard Scoring Formula}
+\author{Kyle M. Lang}
+
+\begin{document}
+
+\maketitle
+
+\section{Definition of Terms}
+
+\begin{itemize}
+\item Raw exam score: $X$
+\item Minimum exam score: $X_0$
+\item Number of questions: $N_q$
+\item Number of response options: $N_o$
+\item Score expected by guessing alone:\begin{align*}
+    X_g = \frac{N_q}{N_o}
+  \end{align*}
+\item Latent knowledge score
+  \begin{align*}
+    K = \frac{X - X_g}{N_q - X_g}
+  \end{align*}
+\item Knowledge score required to pass the exam: $K_p$
+\end{itemize}
+
+\section{Grade Calculation}
+
+\begin{align*}
+  \textit{Grade} =
+  \begin{cases}
+    X_0 + \frac{K (5.5 - X_0)}{K_p},~\text{if}~K < K_p\\
+    5.5 + \left[\frac{K - K_p}{1 - K_p}\right] \times 4.5,~\text{otherwise}
+  \end{cases}
+\end{align*}
+
+\end{document}

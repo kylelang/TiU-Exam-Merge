@@ -1,7 +1,7 @@
 ### Title:    Process TiU Hybrid Exams
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-14
-### Modified: 2020-12-09
+### Modified: 2020-12-22
 
 rm(list = ls(all = TRUE)) # Clear the workspace
 
@@ -11,8 +11,12 @@ rm(list = ls(all = TRUE)) # Clear the workspace
 ## gradebook download:
 missingScoreCodes <- c("N/A") 
 
-# Set this argument to 1 if TiSEM adopts a 10-point grade scale:
+## Set this argument to 1 if TiSEM adopts a 10-point grade scale:
 tisemMinGrade <- 0 
+
+## Set this argument to define the maximum number of characters allowed in
+## filepaths on Windows machines:
+maxNameLength <- 260
 
 source("subroutines/0_functions.R")
 
