@@ -9,10 +9,10 @@ rm(list = ls(all = TRUE)) # Clear the workspace
 ## Use this argument to define a character vector containing all of the special
 ## character strings used to indicate missing exam scores in the Canvas
 ## gradebook download:
-missingScoreCodes <- c("N/A") 
+missingScoreCodes <- c("N/A")
 
 ## Set this argument to 1 if TiSEM adopts a 10-point grade scale:
-tisemMinGrade <- 0 
+tisemMinGrade <- 0
 
 ## Set this argument to define the maximum number of characters allowed in
 ## filepaths on Windows machines:
@@ -34,7 +34,7 @@ while(!finished) {
 
     ## Generate an XLSX report:
     source("subroutines/3_report.R")
-    
+
     finished <-
         dlgMessage("Do you want to process another exam?", "yesno")$res == "no"
 }

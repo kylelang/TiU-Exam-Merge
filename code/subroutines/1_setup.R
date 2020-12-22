@@ -31,7 +31,7 @@ if(campus) {
         dlgOpen(title    = "Please select the file(s) that contain(s) the on-campus test results.",
                 multiple = TRUE,
                 filters  = xlsxFilters)$res
-    
+
     if(length(campusFile) == 0)
         wrappedError("I cannot proceed without knowing where to find your on-campus test results.")
 }
@@ -64,7 +64,7 @@ if(scoreScheme == scoreOpts["wo3"]) {
     nOptions   <- as.numeric(
         dlgInput("How many response options are available for each question?")$res
     )
-    check <- length(nQuestions) == 0 | length(nOptions) == 0 
+    check <- length(nQuestions) == 0 | length(nOptions) == 0
     if(check)
         wrappedError("I need to know how many questions this exam contains and the number of response options for each question before I can proceed.")
 }
@@ -109,13 +109,11 @@ if(campus) {
     if(windows & fileLen > maxNameLength) {
         newFile <- dlgMessage(
             paste(
-                "The filepath that I've automatically generated for your irregularity checks:\n",
-                checksFile,
-                "\nis",
+                "The filepath that I've automatically generated for your irregularity checks",
+                paste0("(", checksFile, ")"),
+                "is",
                 fileLen,
-                "characters long. Windows may not be able to handle filepaths with more than",
-                maxNameLength,
-                "characters. Would you like to select a different location in which to save the results of your irregularity checks?"
+                "characters long. Windows may not be able to handle filepaths of this length. Would you like to select a different location in which to save the results of your irregularity checks?"
             ),
             "yesno"
         )$res

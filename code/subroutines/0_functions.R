@@ -5,7 +5,7 @@
 
 
 ## Score the exam according to one of the three functional scoring rules:
-scoreExam <- function(score, what, nQuestions, nOptions, minGrade, pass = 0.55) 
+scoreExam <- function(score, what, nQuestions, nOptions, minGrade, pass = 0.55)
     switch(what,
            ## Post-2020 standard guessing correction:
            scoreRule1(score      = score,
@@ -55,7 +55,7 @@ scoreRule1 <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
 scoreRule2 <- function(score, nQuestions, nOptions, minGrade = 1) {
     guess <- nQuestions / nOptions
     pass  <- guess + ((nQuestions - guess) / 2)
-    
+
     grade <- ((5.5 - minGrade) / pass) * score + minGrade
     tmp   <- (4.5 / (nQuestions - pass)) * (score - pass) + 5.5
 
@@ -258,16 +258,16 @@ processCampus <- function(filePath) {
         firstName = stuNames["name1", ],
         source    = "Campus"
     )
-    
+
     ## Remove any students without SNRs or scores:
     outData <- outData[with(outData, !is.na(snr) & !is.na(score)), ]
-    
+
     ## Extract SA-computed result for testing purposes:
     outData0 <- data.frame(
         snr     = suppressWarnings(as.numeric(grades[ , "S Nummer"])),
         result0 = suppressWarnings(as.numeric(grades$Resultaat))
     )
-    
+
     list(data    = outData,
          data0   = outData0,
          faculty = faculty,
@@ -285,10 +285,10 @@ processCanvas <- function(index, data, names, ...) {
     tmp      <- str_locate_all(examName,
                                c("/", "\\(Remotely Proctored|OPT-OUT")
                                )
-    
+
     examDate <- tryCatch(substr(examName, 1, tmp[[1]][1, 1] - 1),
                          error = function(e) "Not Recovered")
-    
+
     courseCode <- tryCatch(substr(examName,
                                   tmp[[1]][1, 1] + 1,
                                   tmp[[1]][2, 2] - 1),
@@ -320,11 +320,11 @@ processCanvas <- function(index, data, names, ...) {
         source           = "Canvas",
         stringsAsFactors = FALSE
     )
-    
+
     ## Remove any students without SNRs or scores:
     drops   <- with(outData, empty(snr, ...) | empty(score, ...))
     outData <- outData[!drops, ]
-    
+
     list(data = outData, name = examName, date = examDate, id = courseCode)
 }
 
@@ -339,13 +339,13 @@ processTestVision <- function(data) {
     )
     courseCode <- data[1, "MapNaamToets"]
     version    <- ifelse(data$Proctoring == "Ja", "Proctored", "Not Proctored")
-    
+
     ## Parse student names:
     stuNames <- sapply(data$KandidaatWeergavenaam, parseName, USE.NAMES = FALSE)
 
     ## Process ANRs:
     anr <- as.numeric(gsub("u", "", data$KandidaatAanmeldnaam))
-    
+
     ## Extract the relevent columns:
     outData <- data.frame(anr              = anr,
                           score            = data$ToetsScore,
@@ -354,7 +354,7 @@ processTestVision <- function(data) {
                           version          = version,
                           source           = "TestVision",
                           stringsAsFactors = FALSE)
-    
+
     list(data = outData, name = examName, date = examDate, id = courseCode)
 }
 
@@ -376,7 +376,7 @@ cohenD <- function(x, group) {
     n  <- table(group)
     m  <- tapply(x, group, mean)
     s2 <- tapply(x, group, var)
-    
+
     as.numeric(
         abs(diff(m)) /
         sqrt(((n[1] - 1) * s2[1] + (n[2] - 1) * s2[2]) / (sum(n) - 2))
@@ -395,22 +395,22 @@ compareScores <- function(data) {
 
     ## Store groups sizes:
     n <- table(groups)
-    
+
     ## How many students passed each exam?
     tmp  <- factor(data$result >= 5.5, levels = c("FALSE", "TRUE"))
     tab6 <- table(groups, pass = tmp)
     or6  <- (tab6["online", "TRUE"] / tab6["online", "FALSE"]) /
         (tab6["campus", "TRUE"] / tab6["campus", "FALSE"])
-    
+
     ## How many students passed with a score of 8 or higher?
     tmp  <- factor(data$result >= 7.75, levels = c("FALSE", "TRUE"))
     tab8 <- table(groups, pass = tmp)
     or8  <- (tab8["online", "TRUE"] / tab8["online", "FALSE"]) /
         (tab8["campus", "TRUE"] / tab8["campus", "FALSE"])
-    
+
     ## Compare mean passing rates:
     tOut <- t.test(data$result ~ groups, var.equal = FALSE)
-    
+
     ## Compare proportions of passing students:
     if(sum(tab6[ , "TRUE"]) > 0) {
         if(all(tab6 >= 5))
@@ -430,7 +430,7 @@ compareScores <- function(data) {
     } else {
         test8 <- NA
     }
-    
+
     list(n      = n,
          mean   = tapply(data$result, groups, mean),
          count6 = tab6[ , "TRUE"],
@@ -452,22 +452,20 @@ getOutputFile <- function(windows, maxLength) {
     newFile <- "yes"
     while(newFile == "yes") {
         out <- dlgSave(title = "Where would you like to save the results?")$res
-        
+
         ## Add a file extension to the output file, if necessary:
         if(!grepl("\\.xlsx$", out, ignore.case = TRUE))
             out <- paste(out, "xlsx", sep = ".")
-        
+
         fileLen <- nchar(out)
         if(windows & fileLen > maxLength) {
             newFile <- dlgMessage(
                 paste(
-                    "The filepath that you've specified:\n",
-                    out,
-                    "\nis",
+                    "The filepath that you've specified",
+                    paste0("(", out, ")"),
+                    "is",
                     fileLen,
-                    "characters long. Windows may not be able to handle filepaths with more than",
-                    maxLength,
-                    "characters. Would you like to select a different location?"
+                    "characters long. Windows may not be able to handle filepaths of this length. Would you like to select a different location?"
                 ),
                 "yesno"
             )$res

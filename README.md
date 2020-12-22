@@ -23,10 +23,10 @@ dialog boxes when prompted.
 
 ## Input Notes
 
-The results of the online examination should be provided as part of a standard
-Canvas gradebook download. This file must be in CSV format. The utility should
-work with CSV files that use commas `","` or semi-colons `";"` as the field
-delimiter.
+The results of the online examination should be provided as either a standard
+Canvas gradebook download or a TestVision results file. This file must be in CSV
+format. The utility should work with CSV files that use commas `","` or
+semi-colons `";"` as the field delimiter.
 
 The results of the on-campus examinations should be provided in the standard
 scoring report provided by the Student Administration. These files must be in
@@ -34,16 +34,17 @@ XLSX format.
 
 The full set of on-campus results may comprise multiple files. In this case, you
 will be prompted to locate each of the pertinent files when setting up the
-job. Multiple sets of online results are also supported, but the program assumes
-that these results will be represented as multiple columns in a single input
-file. So, you may only read in one file of online results.
+job. Multiple sets of online results are supported if the online exam was
+administered via Canvas. In this case, the program assumes that these results
+will be represented as multiple columns in a single input file. So, you may only
+read in one file of online results.
 
-The program will also run with only online exam results. When prompted to
-specify the number of on-campus exam result files, input "0" to process only
-online exam results.
+The program will also run with only online exam results. After indicating the
+location of their online exam results, the user will be asked if they have any
+on-campus results to process.
 
-The name of the column containing the online exam results should have a specific
-structure and format.
+For online exams administered through Canvas, the name of the column containing
+the online exam results should have a specific structure and format.
 
 For proctored exam results:
 
@@ -58,6 +59,10 @@ For unproctored exam results:
 When these formatting requirements are not met, the utility should still work,
 but some metadata may not be recoverable (i.e., date of the online exam, course
 code, name of the online exam).
+
+The TestVision results file is automatically generated with known formatting, so
+no special formatting considerations are necessary when processing TestVision
+results.
 
 ## Scoring Notes
 
@@ -83,7 +88,8 @@ value to choose, accept the default.
 
 A reference implementation of the new standard guessing correction formula
 (provided by the TiU Examination Committee) is available in
-`reference/grading.R`.
+`reference/grading.R`, and the fomula is documented in
+`reference/gradingFormula.pdf`.
 
 If you opt to apply a custom scoring scheme, you will be asked to supply a
 lookup table defining the custom scoring scheme. This lookup table must:
@@ -117,6 +123,45 @@ be scored with a minimum grade of 0, and all other faculties will get a minimum
 grade of 1. The faculty is determined by parsing the on-campus results file, so
 the user will need to specify the faculty when processing only online exam
 results. If the user cannot specify the faculty, the minimum score is set to 1.
+
+## Irregularity Checks
+
+When processing both online and on-campus results, the program will compare the
+two grade distributions to check for irregularities. The results of these checks
+will be saved as a seperate XLSX workbook in the same directory the user choses
+for the final report.
+
+The distributions are compared via three tests:
+
+### Mean Grades
+
+The mean on-campus grade is compared to the mean online grade using an
+independent samples t-test *without* assuming equal variances. The following
+statistics are reported for this test:
+
+1. The estimated t-statistic
+1. The df of the t-test
+1. The p-value of the t-test
+1. An effect size for the mean difference (i.e, Cohen's d)
+
+### Proportion of Grades $\geq$ 6 (i.e., Passing Students)
+
+The proportions of the passing grades are compared using a $\chi^2$ test for
+independence when all cell counts in the *Exam Version* $\times$ *Passing* table
+are at least 5. When any cell-count is less than 5, the comparison is made via
+Fisher's exact test for independence. The following statistics are reported for
+this test:
+
+1. The ratio of the odds of passing the online exam to the odds of passing the
+   on-campus exam.
+1. The estimated $\chi^2$ statistic (unless using Fisher's exact test)
+1. The p-value for the test
+1. An effect size for the difference in proportions (i.e., Cohen's h)
+
+### Proportion of Grades $\geq$ 8 (i.e., Cum Laude Students)
+
+The proportions of cum laude students are compared and reported in the same way
+as the proportions of passing students.
 
 ## Known Issues
 
