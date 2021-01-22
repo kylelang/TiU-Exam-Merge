@@ -43,3 +43,7 @@ vignettes/*.pdf
 
 # The project's sandbox directory
 .sandbox
+
+# LaTeX sundry in the reference directory
+reference/*.aux
+reference/*.log
