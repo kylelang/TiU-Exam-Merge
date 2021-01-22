@@ -1,37 +1,54 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-22
+### Modified: 2021-01-22
 
 
 ## Score the exam according to one of the three functional scoring rules:
-scoreExam <- function(score, what, nQuestions, nOptions, minGrade, pass = 0.55)
-    switch(what,
-           ## Post-2020 standard guessing correction:
-           scoreRule1(score      = score,
-                      nQuestions = nQuestions,
-                      nOptions   = nOptions,
-                      minGrade   = minGrade,
-                      pass       = pass),
-           ## First option from work order form:
-           scoreRule2(score      = score,
-                      nQuestions = nQuestions,
-                      nOptions   = nOptions,
-                      minGrade   = 1),
-           ## Second option from work order form:
-           scoreRule1(score      = score,
-                      nQuestions = nQuestions,
-                      nOptions   = nOptions,
-                      minGrade   = 0)
-           )
+scoreExam <- function(score,
+                      what,
+                      nQuestions,
+                      nOptions,
+                      minGrade,
+                      pass   = 0.55,
+                      digits = 1)
+{
+    ## Compute the grade:
+    grade <- switch(what,
+                    ## Post-2020 standard guessing correction:
+                    scoreRule1(score      = score,
+                               nQuestions = nQuestions,
+                               nOptions   = nOptions,
+                               minGrade   = minGrade,
+                               pass       = pass),
+                    ## First option from work order form:
+                    scoreRule2(score      = score,
+                               nQuestions = nQuestions,
+                               nOptions   = nOptions,
+                               minGrade   = 1),
+                    ## Second option from work order form:
+                    scoreRule1(score      = score,
+                               nQuestions = nQuestions,
+                               nOptions   = nOptions,
+                               minGrade   = 0)
+                    )
+    
+    ## Round the result:
+    roundUp(grade, digits)
+}
 
 ###--------------------------------------------------------------------------###
+                                        #score      <- c(39, 37, 35, 43)
+                                        #nQuestions <- 60
+                                        #nOptions   <- 3
+                                        #minGrade   <- 1
+                                        #pass       <- 0.55
 
 ## Function implementing the exam committee's post-2020 scoring rule:
 scoreRule1 <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
     ## Compute score expected by guessing:
     guess <- nQuestions / nOptions
-
+    
     ## Compute raw score with guessing correction:
     knowledge <- (score - guess) / (nQuestions - guess)
     knowledge[score < guess] <- 0 # Negative values are not allowed
@@ -46,7 +63,8 @@ scoreRule1 <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
         else
             grade[i] <- 5.5 + ((knowledge[i] - pass) / (1 - pass)) * 4.5
     }
-    round(grade, 1)
+
+    grade
 }
 
 ###--------------------------------------------------------------------------###
@@ -60,7 +78,7 @@ scoreRule2 <- function(score, nQuestions, nOptions, minGrade = 1) {
     tmp   <- (4.5 / (nQuestions - pass)) * (score - pass) + 5.5
 
     grade[score >= pass] <- tmp[score >= pass]
-    round(grade, 1)
+    grade
 }
 
 ###--------------------------------------------------------------------------###
@@ -82,6 +100,9 @@ prepScoringScheme <- function(file) {
 
 ## Parse student names into surname and initials/first name:
 parseName <- function(x) {
+    ## Deal with potential encoding issues:
+    x <- fixEncoding(x)
+    
     ## Case 1.1: Surname, First Name
     ## Case 1.2: Surname, Initials
     tmp <- unlist(str_locate_all(x, ","))
@@ -131,6 +152,12 @@ wrappedError <- function(msg, width = 79)
 ## Wrap warning messages:
 wrappedWarning <- function(msg, width = 79, ...)
     warning(paste(strwrap(msg, width), collapse = "\n"), call. = FALSE, ...)
+
+###--------------------------------------------------------------------------###
+
+## Wrap messages:
+wrappedMessage <- function(msg, width = 79, ...)
+    message(paste(strwrap(msg, width), collapse = "\n"), ...)
 
 ###--------------------------------------------------------------------------###
 
@@ -190,17 +217,23 @@ findExam <- function(data,
 
 ###--------------------------------------------------------------------------###
 
-## Automatically detect the field delimiter in a CSV file and read its contents.
-autoReadCsv <- function(file, ...) {
+## Try to automatically detect the field delimiter in a CSV file
+findDelim <- function(file) {
     semiColonSize <-
         length(scan(file, what = "character", sep = ";", quiet = TRUE))
     commaSize     <-
         length(scan(file, what = "character", sep = ",", quiet = TRUE))
+    
+    ifelse(semiColonSize > commaSize, ";", ",")
+}
 
-    sep <- ifelse(semiColonSize > commaSize, ";", ",")
-    out <- read.csv(file, sep = sep, ...)
+###--------------------------------------------------------------------------###
 
-    list(data = out, sep = sep)
+## Try to automatically detect the field delimiter and character encoding in a
+## CSV file and read its contents.
+autoReadCsv <- function(file, ...) {
+    out <- read.csv(file, sep = findDelim(file), ...)
+    list(data = out, sep = delim)
 }
 
 ###--------------------------------------------------------------------------###
@@ -329,6 +362,8 @@ processCanvas <- function(index, data, names, ...) {
 }
 
 ###--------------------------------------------------------------------------###
+data <- onlineData
+name <- data$KandidaatWeergavenaam
 
 ## Process the TestVision-based results file:
 processTestVision <- function(data) {
@@ -339,7 +374,7 @@ processTestVision <- function(data) {
     )
     courseCode <- data[1, "MapNaamToets"]
     version    <- ifelse(data$Proctoring == "Ja", "Proctored", "Not Proctored")
-
+    
     ## Parse student names:
     stuNames <- sapply(data$KandidaatWeergavenaam, parseName, USE.NAMES = FALSE)
 
@@ -474,4 +509,36 @@ getOutputFile <- function(windows, maxLength) {
         }
     }# CLOSE while(newFile == "yes")
     out
+}
+
+###--------------------------------------------------------------------------###
+
+## Round in the traditional way with 5 rounded up.
+roundUp <- function(x, digits) {
+    ## Hack to prevent under-rounding caused by representation errors:
+    x <- round(x * 10^(digits + 1)) / 10^(digits + 1)
+
+    x <- x * 10^digits
+    d <- x %% 1
+    x <- x - d
+    
+    (x + ifelse(d >= 0.5, 1, 0)) / 10^digits
+}
+
+###--------------------------------------------------------------------------###
+
+## Try to automatically fix UTF-8 vs. Latin1 encoding issues:
+fixEncoding <- function(x) { 
+    ## Try a UTF-8 encoding:
+    utf   <- iconv(x, "UTF-8", "UTF-8", sub = "?")
+    check <- any(grepl("?", utf, fixed = TRUE))
+
+    ## If the UTF-8 encoding fails somewhere, try a Latin1 encoding:
+    if(check) {
+        latin <- iconv(x, "latin1", "UTF-8")
+        if(sum(is.na(latin)) == 0) return(latin)
+    }
+
+    ## If the Latin1 encoding fails anywhere, fall back to the ugly UTF-8:
+    utf
 }

@@ -54,9 +54,9 @@ CB.setColData(cb, blockData, 1, colStyle = BoldLeftStyle)
 blockData <- matrix(
     c(cutoff,
       with(pooled,
-           c(round(100 * mean(result > 5.5), 1),
-             round(mean(result), 1),
-             round(mean(score), 1),
+           c(roundUp(100 * mean(result > 5.5), 1),
+             roundUp(mean(result), 1),
+             roundUp(mean(score), 1),
              length(score)
              )
            )
@@ -269,15 +269,15 @@ if(campus) {
              tmp$date,
              with(scoreComps,
                   c(n[c("campus", "online")],
-                    round(mean[c("campus", "online")], 2),
+                    roundUp(mean[c("campus", "online")], 2),
                     count6[c("campus", "online")],
                     count8[c("campus", "online")],
-                    with(tOut, c(round(statistic, 2),
-                                 round(parameter, 2),
-                                 round(p.value, 3)
+                    with(tOut, c(roundUp(statistic, 2),
+                                 roundUp(parameter, 2),
+                                 roundUp(p.value, 3)
                                  )
                          ),
-                    round(d, 3)
+                    roundUp(d, 3)
                     )
                   )
              )
@@ -289,16 +289,16 @@ if(campus) {
     check <- class(scoreComps$test6) == "htest"
     if(check) {
         tmp2 <- with(scoreComps,
-                     c(round(or6, 2),
+                     c(roundUp(or6, 2),
                        with(test6,
                             c(ifelse(grepl("Fisher's", method),
                                      "Not Applicable",
-                                     round(statistic, 2)
+                                     roundUp(statistic, 2)
                                      ),
-                              round(p.value, 3)
+                              roundUp(p.value, 3)
                               )
                             ),
-                       round(h6, 3)
+                       roundUp(h6, 3)
                        )
                      )
     } else {
@@ -316,16 +316,16 @@ if(campus) {
     check <- class(scoreComps$test8) == "htest"
     if(check) {
         tmp2 <- with(scoreComps,
-                     c(round(or8, 2),
+                     c(roundUp(or8, 2),
                        with(test8,
                             c(ifelse(grepl("Fisher's", method),
                                      "Not Applicable",
-                                     round(statistic, 2)
+                                     roundUp(statistic, 2)
                                      ),
-                              round(p.value, 3)
+                              roundUp(p.value, 3)
                               )
                             ),
-                       round(h8, 3)
+                       roundUp(h8, 3)
                        )
                      )
     } else {

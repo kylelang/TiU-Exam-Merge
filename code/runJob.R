@@ -1,7 +1,9 @@
 ### Title:    Process TiU Hybrid Exams
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-14
-### Modified: 2020-12-22
+### Modified: 2021-01-22
+
+install.packages(c("xlsx", "svDialogs"), repos = "http://cloud.r-project.org")
 
 rm(list = ls(all = TRUE)) # Clear the workspace
 
@@ -17,6 +19,9 @@ tisemMinGrade <- 0
 ## Set this argument to define the maximum number of characters allowed in
 ## filepaths on Windows machines:
 maxNameLength <- 260
+
+## The number of decimal places with which the final grades should be reported:
+gradeDigits <- 1
 
 source("subroutines/0_functions.R")
 

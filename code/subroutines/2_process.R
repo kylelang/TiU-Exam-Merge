@@ -1,23 +1,20 @@
 ### Title:    Combine and Process TiU Hybrid Exam Results
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-11
+### Modified: 2021-01-22
 
 
 ###--Process Online Grade Data-----------------------------------------------###
 
 ## Read in online grade data and column names:
-tmp         <- autoReadCsv(onlineFile, stringsAsFactors = FALSE)
-onlineData  <- tmp$data
-onlineNames <- as.character(
-    read.table(file             = paste0(onlineFile),
-               nrows            = 1,
-               sep              = tmp$sep,
-               stringsAsFactors = FALSE)
-)
+delim       <- findDelim(onlineFile)
+onlineNames <-
+    scan(onlineFile, what = "character", nlines = 1, sep = delim, quiet = TRUE)
+onlineData  <- read.csv(onlineFile, sep = delim, stringsAsFactors = FALSE)
 
 ## Check if the online exam was administered through Canvas or TestVision:
 canvas <- any(grepl("Points Possible|(read only)", onlineData[2, ]))
+                                        #canvas <- !any(grepl("KandidaatPowerStatus", onlineNames))
 
 if(canvas) {
     ## Drop metadata rows:
@@ -122,7 +119,8 @@ if(scoreScheme == scoreOpts["wo3"]) {
                                nQuestions = nQuestions,
                                nOptions   = nOptions,
                                minGrade   = minGrade,
-                               pass       = passNorm)
+                               pass       = passNorm,
+                               digits     = gradeDigits)
     
     ## Generate a lookup table for the report:
     tmp        <- 0 : nQuestions
@@ -132,7 +130,8 @@ if(scoreScheme == scoreOpts["wo3"]) {
                                                nQuestions = nQuestions,
                                                nOptions   = nOptions,
                                                minGrade   = minGrade,
-                                               pass       = passNorm)
+                                               pass       = passNorm,
+                                               digits     = gradeDigits)
                              )
 }
 
@@ -142,12 +141,18 @@ cutoff <- with(scoreTable, Score[sum(Grade < 5.5) + 1])
 if(campus) {
     ## Check the results:
     tmp   <- merge(pooled, campusData0, by = "snr")
-    check <- all(with(tmp, result - result0) == 0)
+    check <- all(with(tmp, result - roundUp(result0, gradeDigits)) == 0)
     
     if(!check)
         wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.",
                        immediate. = TRUE)
 
+    ## Check if sample sizes are sufficient to support irregularity checks:
+    check <- all(table(pooled$source) >= 5)
+    
     ## Compare the online and on-campus results to check for irregularities:
-    scoreComps <- compareScores(pooled)
+    if(check)
+        scoreComps <- compareScores(pooled)
+    else
+        wrapMessage("Your online or on-campus test results contain fewer than 5 students, so I am skipping the irregularity checks.")
 }

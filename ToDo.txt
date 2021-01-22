@@ -3,8 +3,21 @@
 ### Created:  2020-12-09
 ### Modified: 2021-01-22
 
-1. Allow multiple file selections for on-campus results files.
--- DONE: 2020-12-09
+Features:
 
-2. Update README to reflect changes made to accomodate TestVision results.
--- DONE: 2020-12-22
+1. Add informative error when trying to read in a non-CSV lookup table for user-defined scoring rule.
+
+2. Open file-selection dialogs one level above the first selected directory.
+
+Bugs:
+
+1. Small samples causing irregularity checks to crash
+-- Fixed: 2021-01-22
+-- Sample sizes smaller than 5 students now trigger a skip of irregularity checks.
+
+2. Multiple file selection causing duplicate students when running the script in RStudio
+
+3. Grades are rounded incorrectly
+-- Fixed: 2021-01-22
+-- The round() function (which was being used for rounding) uses the "round-to-even" rule
+-- Rounding is now implemented with the traditional approach of rounding 5 up.
