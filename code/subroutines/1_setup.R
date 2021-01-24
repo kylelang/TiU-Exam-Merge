@@ -1,7 +1,7 @@
 ### Title:    Define the Parameters of a TiU Exam Combination Job
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2020-12-22
+### Modified: 2021-01-24
 
 
 ## Define legal file types for online results file:
@@ -9,8 +9,11 @@ csvFilters <- matrix(c("Comma-Seperated Values", "*.csv;*.CSV"), 1, 2)
 
 ## Prompt the user to select the file path to the CSV file containing the online
 ## test results:
-onlineFile <- dlgOpen(title = "Please select the file that contains the online test results.",
+onlineFile <- dlgOpen(title   = "Please select the file that contains the online test results.",
                       filters = csvFilters)$res
+
+## Derive the starting directory for future file-selection dialogs:
+dir0 <- paste0(dirname(dirname(onlineFile)), "/")
 
 if(length(onlineFile) == 0)
     wrappedError("I cannot proceed without knowing where to find your online test results.")
@@ -28,7 +31,8 @@ campus <- dlgMessage(message = "Do you have any on-campus results to process?",
 ## on-campus test results:
 if(campus) {
     campusFile <-
-        dlgOpen(title    = "Please select the file(s) that contain(s) the on-campus test results.",
+        dlgOpen(default  = dir0,
+                title    = "Please select the file(s) that contain(s) the on-campus test results.",
                 multiple = TRUE,
                 filters  = xlsxFilters)$res
 
@@ -48,9 +52,15 @@ scoreScheme <- dlgList(choices = scoreOpts,
 if(scoreScheme == scoreOpts["wo3"]) {
     ## Prompt the user to select the file path to the CSV file containing the
     ## lookup table describing the custom scoring scheme:
-    tableFile <- dlgOpen(title = "Please select the file that contains the lookup table defining the custom scoring scheme.",
+    tableFile <- dlgOpen(default = dir0,
+                         title   = "Please select the file that contains the lookup table defining the custom scoring scheme.",
                          filters = csvFilters)$res
 
+    ## Check the file type:
+    check <- grepl("\\.csv$", tableFile, ignore.case = TRUE)
+    if(!check)
+        wrappedError("The lookup table must be a CSV file.")
+    
     tmp        <- prepScoringScheme(tableFile)
     scheme     <- tmp$scheme
     scoreTable <- tmp$table
@@ -97,7 +107,7 @@ if(scoreScheme == scoreOpts["new"]) {
 dlgMessage("Finally, I need you to tell me where you would like to save the results.")
 
 windows <- Sys.info()["sysname"] == "Windows"
-outFile <- getOutputFile(windows, maxNameLength)
+outFile <- getOutputFile(windows, maxNameLength, dir0)
 
 ## Define an output file for the irregularity checks:
 if(campus) {
@@ -120,6 +130,6 @@ if(campus) {
 
         ## Ask the user to define a new file, if necessary:
         if(newFile == "yes")
-            checksFile <- getOutputFile(windows, maxNameLength)
+            checksFile <- getOutputFile(windows, maxNameLength, dir0)
     }
 }

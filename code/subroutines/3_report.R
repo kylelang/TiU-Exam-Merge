@@ -191,7 +191,7 @@ saveWorkbook(wb1, outFile)
 
 ###--------------------------------------------------------------------------###
 
-if(campus) {
+if(campus && checkIrreg) {
     ## Create a new workbook and sheet to contain the results of the score
     ## comparisons:
     wb1 <- createWorkbook()

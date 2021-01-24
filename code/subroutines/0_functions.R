@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2021-01-22
+### Modified: 2021-01-24
 
 
 ## Score the exam according to one of the three functional scoring rules:
@@ -86,7 +86,10 @@ scoreRule2 <- function(score, nQuestions, nOptions, minGrade = 1) {
 ## Prepare a scoring scheme based on a user-supplied lookup table:
 prepScoringScheme <- function(file) {
     ## Read in the user-supplied lookup table:
-    table           <- autoReadCsv(file, header = FALSE)$data
+    table <- read.csv(file             = file,
+                      header           = FALSE,
+                      sep              = findDelim(file),
+                      stringsAsFactors = FALSE)
     colnames(table) <- c("Score", "Grade")
 
     ## Convert the lookup table into a named vector:
@@ -231,10 +234,9 @@ findDelim <- function(file) {
 
 ## Try to automatically detect the field delimiter and character encoding in a
 ## CSV file and read its contents.
-autoReadCsv <- function(file, ...) {
-    out <- read.csv(file, sep = findDelim(file), ...)
-    list(data = out, sep = delim)
-}
+                                        #autoReadCsv <- function(file, ...) {
+                                        #    read.csv(file, sep = findDelim(file), ...)
+                                        #}
 
 ###--------------------------------------------------------------------------###
 
@@ -362,8 +364,8 @@ processCanvas <- function(index, data, names, ...) {
 }
 
 ###--------------------------------------------------------------------------###
-data <- onlineData
-name <- data$KandidaatWeergavenaam
+                                        #data <- onlineData
+                                        #name <- data$KandidaatWeergavenaam
 
 ## Process the TestVision-based results file:
 processTestVision <- function(data) {
@@ -483,10 +485,11 @@ compareScores <- function(data) {
 
 ###--------------------------------------------------------------------------###
 
-getOutputFile <- function(windows, maxLength) {
+getOutputFile <- function(windows, maxLength, dir0) {
     newFile <- "yes"
     while(newFile == "yes") {
-        out <- dlgSave(title = "Where would you like to save the results?")$res
+        out <- dlgSave(default = dir0,
+                       title   = "Where would you like to save the results?")$res
 
         ## Add a file extension to the output file, if necessary:
         if(!grepl("\\.xlsx$", out, ignore.case = TRUE))

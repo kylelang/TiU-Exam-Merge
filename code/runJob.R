@@ -3,8 +3,6 @@
 ### Created:  2020-10-14
 ### Modified: 2021-01-22
 
-install.packages(c("xlsx", "svDialogs"), repos = "http://cloud.r-project.org")
-
 rm(list = ls(all = TRUE)) # Clear the workspace
 
 ## By deault, missing scores are assumed to be represented by empty cells.

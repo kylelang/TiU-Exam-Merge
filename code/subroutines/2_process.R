@@ -148,11 +148,11 @@ if(campus) {
                        immediate. = TRUE)
 
     ## Check if sample sizes are sufficient to support irregularity checks:
-    check <- all(table(pooled$source) >= 5)
+    checkIrreg <- all(table(pooled$source) >= 5)
     
     ## Compare the online and on-campus results to check for irregularities:
-    if(check)
+    if(checkIrreg)
         scoreComps <- compareScores(pooled)
     else
-        wrapMessage("Your online or on-campus test results contain fewer than 5 students, so I am skipping the irregularity checks.")
+        wrappedMessage("Your online or on-campus test results contain fewer than 5 students, so I am skipping the irregularity checks.")
 }
