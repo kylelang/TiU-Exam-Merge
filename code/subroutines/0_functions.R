@@ -196,9 +196,6 @@ findExam <- function(data,
         selection <- multiList(windows = windows,
                                choices = c(names[examCol], opt0),
                                title   = "Select online exam results")
-                                        #dlgList(choices  = c(names[examCol], opt0),
-                                        #        multiple = TRUE,
-                                        #        title    = "Select online exam results")$res
 
         fail <- length(selection) == 0 | opt0 %in% selection
         if(fail)
@@ -215,10 +212,7 @@ findExam <- function(data,
 
         selection <- multiList(windows = windows,
                                choices = names,
-                               title   = "Select online exam results.")$res
-                                        #dlgList(choices  = names,
-                                        #        multiple = TRUE,
-                                        #        title    = "Select online exam results.")$res
+                               title   = "Select online exam results.")
 
         if(length(selection) == 0)
             wrappedError("I cannot proceed without knowing which column contains your online exam results.")
