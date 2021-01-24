@@ -200,22 +200,8 @@ excluded from the output report). If a student has a score of zero because they
 did not take the exam, they will still be assigned the minimum grade in the
 final report.
 
-When running the utility by sourcing the `code/runJob.R` script interactively
-through RStudio, the list selection dialog is semi-broken. RStudio (version <=
-1.3.1093, at least) does not support a GUI list-selector dialog, so the script
-will default to the text-based list selector (due to the behavior of
-**svDialogs**::dlgList() version <= 1.0.0). The text-based list selector works
-fine for selecting single elements but not for selecting multiple elements. When
-selecting multiple options, the RStudio text-based list selector seems to force
-selection of the default option (which cannot be disabled or chosen
-intelligently by the program). This issue does not seem to occur when executing
-the script via any means other than interactively sourcing `code/runJob.sh` from
-within RStudio and may be resolved by future updates to either **svDialogs** or
-RStudio.
-
-RStudio also does not allow multiple file selection, so only one set of
-on-campus results can be read in when sourcing the `code/runJob.R` script
-through RStudio.
+RStudio does not allow multiple file selection, so only one set of on-campus
+results can be read in when sourcing the `code/runJob.R` script through RStudio.
 
 The program will automatically append the ".xlsx" file extension to the output
 file when the user does not include the extension. When applying this

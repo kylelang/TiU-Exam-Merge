@@ -13,7 +13,7 @@ onlineFile <- dlgOpen(title   = "Please select the file that contains the online
                       filters = csvFilters)$res
 
 ## Derive the starting directory for future file-selection dialogs:
-dir0 <- paste0(dirname(dirname(onlineFile)), "/")
+dir0 <- paste0(dirname(dirname(onlineFile)), "/*")
 
 if(length(onlineFile) == 0)
     wrappedError("I cannot proceed without knowing where to find your online test results.")

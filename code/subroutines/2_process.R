@@ -14,22 +14,22 @@ onlineData  <- read.csv(onlineFile, sep = delim, stringsAsFactors = FALSE)
 
 ## Check if the online exam was administered through Canvas or TestVision:
 canvas <- any(grepl("Points Possible|(read only)", onlineData[2, ]))
-                                        #canvas <- !any(grepl("KandidaatPowerStatus", onlineNames))
 
 if(canvas) {
     ## Drop metadata rows:
     onlineData <- onlineData[-c(1 : 2), ]
-    
+
     ## Find the exam column(s) in the Online gradebook:
-    examCol <- findExam(data = onlineData, names = onlineNames)
-    
+    examCol <-
+        findExam(data = onlineData, names = onlineNames, windows = windows)
+
     ## Process the gradebook data:
     tmp <- lapply(X     = examCol,
                   FUN   = processCanvas,
                   data  = onlineData,
                   names = onlineNames,
                   codes = missingScoreCodes)
-    
+
     onlineData <- do.call(rbind, lapply(tmp, "[[", x = "data"))
     onlineMeta <- lapply(tmp, "[", x = -1)
 } else {
@@ -42,7 +42,7 @@ if(canvas) {
 
 if(campus) {
     tmp <- lapply(campusFile, processCampus)
-    
+
     campusData  <- do.call(rbind, lapply(tmp, "[[", x = "data"))
     campusData0 <- do.call(rbind, lapply(tmp, "[[", x = "data0"))
     campusMeta  <- lapply(tmp, "[", x = -c(1, 2))
@@ -55,18 +55,18 @@ if(campus) {
 if(campus) {
     if(canvas) {
         pooled <- rbind(campusData, onlineData)
-        
+
         ## Check for duplicate students:
         flag <- duplicated(pooled$snr)
-        
+
         if(any(flag)) {
             tmp           <- as.matrix(pooled[flag, c("snr", "surname", "firstName")])
             colnames(tmp) <- c("SNR", "Surname", "Initials/First Name")
-            
+
             ## Save the data on duplicate students:
             dupFile <- paste(dirname(outFile), "duplicate_students.txt", sep = "/")
             write.table(tmp, file = dupFile, sep = "\t", row.names = FALSE)
-            
+
             msg <- paste0("It looks like ",
                           sum(flag),
                           " students are represented in multiple input files. I have saved their information in the file: ",
@@ -80,10 +80,10 @@ if(campus) {
         anr    <- c(rep(NA, nrow(campusData)), onlineData$anr)
         pooled <- data.frame(snr, anr, pooled)
     }
-    
+
     ## Merge the metadata lists:
     meta <- c(campusMeta, onlineMeta)
-    
+
 } else {# No on-campus results
     pooled <- onlineData
     meta   <- onlineMeta
@@ -106,13 +106,13 @@ if(scoreScheme == scoreOpts["wo3"]) {
                             scheme = scheme)
 } else {
     scoringIndex  <- which(scoreOpts %in% scoreScheme)
-    
+
     ## Define the minimum grade to use:
     minGrade <- switch(scoringIndex,
                        ifelse(faculty == "tisem" & tisemMinGrade == 0, 0, 1),
                        1,
                        0)
-    
+
     ## Score the exam:
     pooled$result <- scoreExam(score      = pooled$score,
                                what       = scoringIndex,
@@ -121,7 +121,7 @@ if(scoreScheme == scoreOpts["wo3"]) {
                                minGrade   = minGrade,
                                pass       = passNorm,
                                digits     = gradeDigits)
-    
+
     ## Generate a lookup table for the report:
     tmp        <- 0 : nQuestions
     scoreTable <- data.frame(Score = tmp,
@@ -142,14 +142,14 @@ if(campus) {
     ## Check the results:
     tmp   <- merge(pooled, campusData0, by = "snr")
     check <- all(with(tmp, result - roundUp(result0, gradeDigits)) == 0)
-    
+
     if(!check)
         wrappedWarning("Something may have gone wrong. The exam results I've calculated do not match the results provided by the Student Administration.",
                        immediate. = TRUE)
 
     ## Check if sample sizes are sufficient to support irregularity checks:
     checkIrreg <- all(table(pooled$source) >= 5)
-    
+
     ## Compare the online and on-campus results to check for irregularities:
     if(checkIrreg)
         scoreComps <- compareScores(pooled)

@@ -32,23 +32,18 @@ scoreExam <- function(score,
                                nOptions   = nOptions,
                                minGrade   = 0)
                     )
-    
+
     ## Round the result:
     roundUp(grade, digits)
 }
 
 ###--------------------------------------------------------------------------###
-                                        #score      <- c(39, 37, 35, 43)
-                                        #nQuestions <- 60
-                                        #nOptions   <- 3
-                                        #minGrade   <- 1
-                                        #pass       <- 0.55
 
 ## Function implementing the exam committee's post-2020 scoring rule:
 scoreRule1 <- function(score, nQuestions, nOptions, minGrade, pass = 0.55) {
     ## Compute score expected by guessing:
     guess <- nQuestions / nOptions
-    
+
     ## Compute raw score with guessing correction:
     knowledge <- (score - guess) / (nQuestions - guess)
     knowledge[score < guess] <- 0 # Negative values are not allowed
@@ -105,7 +100,7 @@ prepScoringScheme <- function(file) {
 parseName <- function(x) {
     ## Deal with potential encoding issues:
     x <- fixEncoding(x)
-    
+
     ## Case 1.1: Surname, First Name
     ## Case 1.2: Surname, Initials
     tmp <- unlist(str_locate_all(x, ","))
@@ -164,9 +159,20 @@ wrappedMessage <- function(msg, width = 79, ...)
 
 ###--------------------------------------------------------------------------###
 
+## Define a platform-robust version of the multiple-option list selector:
+multiList <- function(windows, choices, title) {
+    if(windows)
+        select.list(choices = choices, title = title, multiple = TRUE)
+    else
+        dlgList(choices = choices, title = title, multiple = TRUE)$res
+}
+
+###--------------------------------------------------------------------------###
+
 ## Find the index of the column containing the online exam results:
 findExam <- function(data,
                      names,
+                     windows,
                      pattern = "\\d{4}\\.\\d{2}\\.\\d{2}.*Remotely\\.Proctored|OPT\\.OUT")
 {
     ## Try to find the exam column in the Online gradebook:
@@ -187,9 +193,12 @@ findExam <- function(data,
         dlgMessage("I've found multiple columns that seem like they may contain your online exam results. So, you'll need to select the appropriate column(s).")
 
         opt0      <- "None of these columns contains my online exam results."
-        selection <- dlgList(choices  = c(names[examCol], opt0),
-                             multiple = TRUE,
-                             title    = "Select online exam results")$res
+        selection <- multiList(windows = windows,
+                               choices = c(names[examCol], opt0),
+                               title   = "Select online exam results")
+                                        #dlgList(choices  = c(names[examCol], opt0),
+                                        #        multiple = TRUE,
+                                        #        title    = "Select online exam results")$res
 
         fail <- length(selection) == 0 | opt0 %in% selection
         if(fail)
@@ -204,9 +213,12 @@ findExam <- function(data,
     if(length(examCol) == 0 || length(success) == 0 || success == "no") {
         dlgMessage("I haven't been able to automatically detect your online exam results. So, I need you to identify the appropriate column(s).")
 
-        selection <- dlgList(choices  = names,
-                             multiple = TRUE,
-                             title    = "Select online exam results.")$res
+        selection <- multiList(windows = windows,
+                               choices = names,
+                               title   = "Select online exam results.")$res
+                                        #dlgList(choices  = names,
+                                        #        multiple = TRUE,
+                                        #        title    = "Select online exam results.")$res
 
         if(length(selection) == 0)
             wrappedError("I cannot proceed without knowing which column contains your online exam results.")
@@ -226,17 +238,9 @@ findDelim <- function(file) {
         length(scan(file, what = "character", sep = ";", quiet = TRUE))
     commaSize     <-
         length(scan(file, what = "character", sep = ",", quiet = TRUE))
-    
+
     ifelse(semiColonSize > commaSize, ";", ",")
 }
-
-###--------------------------------------------------------------------------###
-
-## Try to automatically detect the field delimiter and character encoding in a
-## CSV file and read its contents.
-                                        #autoReadCsv <- function(file, ...) {
-                                        #    read.csv(file, sep = findDelim(file), ...)
-                                        #}
 
 ###--------------------------------------------------------------------------###
 
@@ -364,8 +368,6 @@ processCanvas <- function(index, data, names, ...) {
 }
 
 ###--------------------------------------------------------------------------###
-                                        #data <- onlineData
-                                        #name <- data$KandidaatWeergavenaam
 
 ## Process the TestVision-based results file:
 processTestVision <- function(data) {
@@ -376,7 +378,7 @@ processTestVision <- function(data) {
     )
     courseCode <- data[1, "MapNaamToets"]
     version    <- ifelse(data$Proctoring == "Ja", "Proctored", "Not Proctored")
-    
+
     ## Parse student names:
     stuNames <- sapply(data$KandidaatWeergavenaam, parseName, USE.NAMES = FALSE)
 
@@ -524,14 +526,14 @@ roundUp <- function(x, digits) {
     x <- x * 10^digits
     d <- x %% 1
     x <- x - d
-    
+
     (x + ifelse(d >= 0.5, 1, 0)) / 10^digits
 }
 
 ###--------------------------------------------------------------------------###
 
 ## Try to automatically fix UTF-8 vs. Latin1 encoding issues:
-fixEncoding <- function(x) { 
+fixEncoding <- function(x) {
     ## Try a UTF-8 encoding:
     utf   <- iconv(x, "UTF-8", "UTF-8", sub = "?")
     check <- any(grepl("?", utf, fixed = TRUE))

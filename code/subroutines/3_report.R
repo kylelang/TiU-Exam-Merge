@@ -1,7 +1,7 @@
 ### Title:    Create an XLSX Output File
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-15
-### Modified: 2020-12-22
+### Modified: 2021-01-24
 
 
 ## Create an empty workbook and a new sheet therein:
