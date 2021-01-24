@@ -1,7 +1,7 @@
 ### Title:    Process TiU Hybrid Exams
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-14
-### Modified: 2021-01-22
+### Modified: 2021-01-24
 
 rm(list = ls(all = TRUE)) # Clear the workspace
 
@@ -27,6 +27,7 @@ library(stringr)
 library(xlsx)
 library(svDialogs)
 
+dir0     <- NULL
 finished <- FALSE
 while(!finished) {
     ## Interactively parameterize the job:

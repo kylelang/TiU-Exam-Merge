@@ -9,9 +9,10 @@ csvFilters <- matrix(c("Comma-Seperated Values", "*.csv;*.CSV"), 1, 2)
 
 ## Prompt the user to select the file path to the CSV file containing the online
 ## test results:
-onlineFile <- dlgOpen(title   = "Please select the file that contains the online test results.",
+onlineFile <- dlgOpen(default = dir0,
+                      title   = "Please select the file that contains the online test results.",
                       filters = csvFilters)$res
-
+                      
 ## Derive the starting directory for future file-selection dialogs:
 dir0 <- paste0(dirname(dirname(onlineFile)), "/*")
 
