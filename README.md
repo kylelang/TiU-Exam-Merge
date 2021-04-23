@@ -107,7 +107,9 @@ value to choose, accept the default.
 A reference implementation of the new standard guessing correction formula
 (provided by the TiU Examination Committee) is available in
 `reference/grading.R`, and the formula is documented in
-`reference/gradingFormula.pdf`.
+`reference/gradingFormula.pdf`. A more extensive explanation of the scoring
+procedure (provided by the TiU Examination Committee) is available in
+`reference/calculating_grades_using_guessing_correction.pdf`.
 
 If you opt to apply a custom scoring scheme, you will be asked to supply a
 lookup table defining the custom scoring scheme. This lookup table must:
