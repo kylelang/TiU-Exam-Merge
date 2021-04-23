@@ -1,7 +1,7 @@
 ### Title:    Create an XLSX Output File
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-15
-### Modified: 2021-01-24
+### Modified: 2021-04-23
 
 
 ## Create an empty workbook and a new sheet therein:
@@ -290,13 +290,13 @@ if(campus && checkIrreg) {
     if(check) {
         tmp2 <- with(scoreComps,
                      c(roundUp(or6, 2),
+                                        #with(test6,
+                                        #     c(ifelse(grepl("Fisher's", method),
+                                        #              "Not Applicable",
+                                        #              roundUp(statistic, 2)
+                                        #              ),
                        with(test6,
-                            c(ifelse(grepl("Fisher's", method),
-                                     "Not Applicable",
-                                     roundUp(statistic, 2)
-                                     ),
-                              roundUp(p.value, 3)
-                              )
+                            c(roundUp(statistic, 2), roundUp(p.value, 3))
                             ),
                        roundUp(h6, 3)
                        )
@@ -317,13 +317,13 @@ if(campus && checkIrreg) {
     if(check) {
         tmp2 <- with(scoreComps,
                      c(roundUp(or8, 2),
+                                        #with(test8,
+                                        #     c(ifelse(grepl("Fisher's", method),
+                                        #              "Not Applicable",
+                                        #              roundUp(statistic, 2)
+                                        #              ),
                        with(test8,
-                            c(ifelse(grepl("Fisher's", method),
-                                     "Not Applicable",
-                                     roundUp(statistic, 2)
-                                     ),
-                              roundUp(p.value, 3)
-                              )
+                            c(roundUp(statistic, 2), roundUp(p.value, 3))
                             ),
                        roundUp(h8, 3)
                        )

@@ -1,7 +1,7 @@
 ### Title:    Subroutines for TiU Exam Merging Utility
 ### Author:   Kyle M. Lang
 ### Created:  2020-10-13
-### Modified: 2021-01-24
+### Modified: 2021-04-23
 
 
 ## Score the exam according to one of the three functional scoring rules:
@@ -445,25 +445,35 @@ compareScores <- function(data) {
     tOut <- t.test(data$result ~ groups, var.equal = FALSE)
 
     ## Compare proportions of passing students:
-    if(sum(tab6[ , "TRUE"]) > 0) {
-        if(all(tab6 >= 5))
-            test6 <- prop.test(tab6, correct = FALSE)
-        else
-            test6 <- fisher.test(tab6)
-    } else {
+                                        #if(sum(tab6[ , "TRUE"]) > 0) {
+                                        #    if(all(tab6 >= 5))
+                                        #        test6 <- prop.test(tab6, correct = FALSE)
+                                        #    else
+                                        #        test6 <- fisher.test(tab6)
+                                        #} else {
+                                        #    test6 <- NA
+                                        #}
+    ## Test differences in passing rates if no cells are too sparse:
+    if(all(tab6 >= 5))
+        test6 <- prop.test(tab6, correct = FALSE)
+    else
         test6 <- NA
-    }
-
+    
     ## Compare proportions of Cum Laude students:
-    if(sum(tab8[ , "TRUE"]) > 0) {
-        if(all(tab8 >= 5))
-            test8 <- prop.test(tab8, correct = FALSE)
-        else
-            test8 <- fisher.test(tab8)
-    } else {
+                                        #if(sum(tab8[ , "TRUE"]) > 0) {
+                                        #    if(all(tab8 >= 5))
+                                        #        test8 <- prop.test(tab8, correct = FALSE)
+                                        #    else
+                                        #        test8 <- fisher.test(tab8)
+                                        #} else {
+                                        #    test8 <- NA
+                                        #}
+    ## Test differences in Cum Laude rates if no cells are too sparse:
+    if(all(tab8 >= 5))
+        test8 <- prop.test(tab8, correct = FALSE)
+    else
         test8 <- NA
-    }
-
+    
     list(n      = n,
          mean   = tapply(data$result, groups, mean),
          count6 = tab6[ , "TRUE"],
