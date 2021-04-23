@@ -71,7 +71,7 @@ the report and irregularity checks are compared to the `maxNameLength` variable
 defined in `runJob.R`. By default, `maxNameLength` is set to 260 characters,
 which is the default maximum file name length on the last several versions of
 Windows. On Windows 10, it is possible to enable long file name support and
-extend the maximum file length to 32,767 characters. 
+extend the maximum file length to 32767 characters. 
 
 If any file name is found to be too long (i.e., to contain more than
 `maxNameLength` characters), the user is asked if they would like to select a
@@ -171,13 +171,12 @@ statistics are reported for this test:
 
 The proportions of the passing grades are compared using a chi-squared test for
 independence when all cell counts in the *Exam Version* X *Passing* table
-are at least 5. When any cell-count is less than 5, the comparison is made via
-Fisher's exact test for independence. The following statistics are reported for
-this test:
+are at least 5. When any cell-count is less than 5, the comparison is skipped.
+The following statistics are reported for this test:
 
 1. The ratio of the odds of passing the online exam to the odds of passing the
    on-campus exam.
-1. The estimated chi-squared statistic (unless using Fisher's exact test)
+1. The estimated chi-squared statistic
 1. The p-value for the test
 1. The standardized difference in proportions (i.e., Cohen's h)
 
